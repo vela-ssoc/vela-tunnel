@@ -15,6 +15,7 @@ import (
 	"github.com/vela-ssoc/backend-common/opurl"
 )
 
+// Tunneler agent 节点与 broker 的连接器
 type Tunneler interface {
 	// ID minion 节点 ID
 	ID() int64
