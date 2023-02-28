@@ -83,7 +83,7 @@ func (bt *borerTunnel) Oneway(ctx context.Context, op opurl.URLer, rd io.Reader)
 }
 
 func (bt *borerTunnel) JSON(ctx context.Context, op opurl.URLer, req any, reply any) error {
-	resp, err := bt.sendJSON(ctx, op, req)
+	resp, err := bt.fetchJSON(ctx, op, req)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (bt *borerTunnel) JSON(ctx context.Context, op opurl.URLer, req any, reply 
 }
 
 func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opurl.URLer, req any) error {
-	resp, err := bt.sendJSON(ctx, op, req)
+	resp, err := bt.fetchJSON(ctx, op, req)
 	if err == nil {
 		_ = resp.Body.Close()
 	}
@@ -126,7 +126,7 @@ func (bt *borerTunnel) Stream(op opurl.URLer, header http.Header) (*websocket.Co
 	return conn, err
 }
 
-func (bt *borerTunnel) sendJSON(ctx context.Context, op opurl.URLer, val any) (*http.Response, error) {
+func (bt *borerTunnel) fetchJSON(ctx context.Context, op opurl.URLer, val any) (*http.Response, error) {
 	header := http.Header{
 		"Content-Type": []string{"application/json; charset=utf-8"},
 		"Accept":       []string{"application/json"},
