@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime"
 	"net"
@@ -60,6 +61,10 @@ func (bt *borerTunnel) Issue() Issue {
 
 func (bt *borerTunnel) Listen() net.Listener {
 	return bt.muxer
+}
+
+func (bt *borerTunnel) NodeName() string {
+	return fmt.Sprintf("minion-%s-%d", bt.Inet(), bt.ID())
 }
 
 func (bt *borerTunnel) Reconnect(ctx context.Context) error {

@@ -35,6 +35,9 @@ type Tunneler interface {
 	// Listen 获取 net.Listener
 	Listen() net.Listener
 
+	// NodeName 节点业务名称，部分地方可能会用到
+	NodeName() string
+
 	// Reconnect 重连
 	Reconnect(context.Context) error
 
