@@ -16,6 +16,8 @@ func newDialer(ethernet, internet Addresses) dialer {
 	esz, isz := len(ethernet), len(internet)
 	length := esz + isz
 	addresses := make(Addresses, 0, length)
+	addresses = append(addresses, ethernet...)
+	addresses = append(addresses, internet...)
 
 	return &iterDial{
 		dial:   &tls.Dialer{NetDialer: new(net.Dialer)},

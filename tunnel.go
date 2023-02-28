@@ -2,17 +2,16 @@ package tunnel
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/vela-ssoc/backend-common/httpclient"
-	"github.com/vela-ssoc/backend-common/netutil"
-
-	"github.com/vela-ssoc/backend-common/logback"
-
 	"github.com/gorilla/websocket"
+	"github.com/vela-ssoc/backend-common/httpclient"
+	"github.com/vela-ssoc/backend-common/logback"
+	"github.com/vela-ssoc/backend-common/netutil"
 	"github.com/vela-ssoc/backend-common/opurl"
 )
 
@@ -57,7 +56,13 @@ type Tunneler interface {
 	Stream(opurl.URLer, http.Header) (*websocket.Conn, error)
 }
 
+var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
+
 func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
+	if len(hide.Ethernet) == 0 && len(hide.Internet) == 0 {
+		return nil, ErrEmptyAddress
+	}
+
 	opt := new(option)
 	for _, fn := range opts {
 		fn(opt)
