@@ -68,6 +68,7 @@ func (bt *borerTunnel) NodeName() string {
 }
 
 func (bt *borerTunnel) Reconnect(ctx context.Context) error {
+	_ = bt.muxer.Close()
 	bt.cancel()
 	if ctx == nil {
 		ctx = bt.parent
