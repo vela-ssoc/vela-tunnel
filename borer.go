@@ -115,7 +115,15 @@ func (bt *borerTunnel) Attachment(ctx context.Context, op opurl.URLer) (Attachme
 }
 
 func (bt *borerTunnel) Stream(op opurl.URLer, header http.Header) (*websocket.Conn, error) {
-	return bt.stream.Stream(op, header)
+	addr := op.String()
+	conn, _, err := bt.stream.Stream(addr, header)
+	if err == nil {
+		bt.slog.Infof("建立 stream (%s) 通道成功", addr)
+	} else {
+		bt.slog.Warnf("建立 stream (%s) 通道失败：%s", addr, err)
+	}
+
+	return conn, err
 }
 
 func (bt *borerTunnel) sendJSON(ctx context.Context, op opurl.URLer, val any) (*http.Response, error) {
