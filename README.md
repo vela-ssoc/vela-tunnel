@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -61,14 +62,15 @@ func main() {
 
 	// 起个名字用于后期便于排查错误
 	// Example: tunnel-172.36.18.18-184309536616640003
-	node := "tunnel-" + ident.Inet.String() + "-" + strconv.FormatInt(issue.ID, 10)
+	node := tun.NodeName()
 
 	// 根据实际业务注册 http router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/echo", func(w http.ResponseWriter, r *http.Request) {
 		slog.Infof("%s 收到了中心端下发的消息", node)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("我是消息已经收到了！！！"))
+		rep := fmt.Sprintf("我是 %s 节点，收到了 echo 的指令", node)
+		w.Write([]byte(rep))
 	})
 
 	errch := make(chan error, 1)
