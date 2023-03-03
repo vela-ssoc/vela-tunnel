@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vela-ssoc/backend-common/httpclient"
 	"github.com/vela-ssoc/backend-common/logback"
 	"github.com/vela-ssoc/backend-common/netutil"
 	"github.com/vela-ssoc/backend-common/opurl"
@@ -41,8 +40,8 @@ type Tunneler interface {
 	// Reconnect 重连
 	Reconnect(context.Context) error
 
-	// Call 请求响应式调用
-	Call(context.Context, opurl.URLer, io.Reader) (*http.Response, error)
+	// Fetch 请求响应式调用
+	Fetch(context.Context, opurl.URLer, io.Reader) (*http.Response, error)
 
 	// Oneway 单向调用，不在乎返回值
 	Oneway(context.Context, opurl.URLer, io.Reader) error
@@ -54,7 +53,7 @@ type Tunneler interface {
 	OnewayJSON(context.Context, opurl.URLer, any) error
 
 	// Attachment 文件附件下载
-	Attachment(context.Context, opurl.URLer) (Attachment, error)
+	Attachment(context.Context, opurl.URLer) (opurl.Attachment, error)
 
 	// Stream 建立双向流
 	Stream(opurl.URLer, http.Header) (*websocket.Conn, error)
@@ -91,8 +90,7 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 	bt.stream = netutil.Stream(bt.dialContext)
 	// 创建 http 客户端
 	tran := &http.Transport{DialContext: bt.dialContext}
-	cli := &http.Client{Transport: tran}
-	bt.client = httpclient.NewClient(cli)
+	bt.client = opurl.NewClient(tran, opt.slog)
 
 	if err := bt.dial(parent); err != nil {
 		bt.slog.Warnf("连接 broker 失败：%v", err)
