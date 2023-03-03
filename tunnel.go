@@ -31,6 +31,9 @@ type Tunneler interface {
 	// Issue 中心端认证成功后返回的数据
 	Issue() Issue
 
+	// BrkAddr 当前连接成功的 broker 节点地址
+	BrkAddr() *Address
+
 	// Listen 获取 net.Listener
 	Listen() net.Listener
 

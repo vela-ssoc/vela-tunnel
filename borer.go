@@ -23,17 +23,18 @@ import (
 
 // borerTunnel 通道连接器
 type borerTunnel struct {
-	hide   Hide               // hide
-	ident  Ident              // ident
-	issue  Issue              // issue
-	dialer dialer             // TCP 连接器
-	muxer  spdy.Muxer         // 底层流复用
-	client opurl.Client       // http 客户端
-	stream netutil.Streamer   // 建立流式通道用
-	slog   logback.Logger     // 日志输出组件
-	parent context.Context    // parent context.Context
-	ctx    context.Context    // context.Context
-	cancel context.CancelFunc // context.CancelFunc
+	hide    Hide               // hide
+	ident   Ident              // ident
+	issue   Issue              // issue
+	dialer  dialer             // TCP 连接器
+	brkAddr *Address           // 当前连接的 broker 节点地址
+	muxer   spdy.Muxer         // 底层流复用
+	client  opurl.Client       // http 客户端
+	stream  netutil.Streamer   // 建立流式通道用
+	slog    logback.Logger     // 日志输出组件
+	parent  context.Context    // parent context.Context
+	ctx     context.Context    // context.Context
+	cancel  context.CancelFunc // context.CancelFunc
 }
 
 func (bt *borerTunnel) ID() int64 {
@@ -54,6 +55,10 @@ func (bt *borerTunnel) Ident() Ident {
 
 func (bt *borerTunnel) Issue() Issue {
 	return bt.issue
+}
+
+func (bt *borerTunnel) BrkAddr() *Address {
+	return bt.brkAddr
 }
 
 func (bt *borerTunnel) Listen() net.Listener {
@@ -150,7 +155,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		ident, issue, err := bt.consult(ctx, conn, addr)
 		cancel()
 		if err == nil {
-			bt.ident, bt.issue = ident, issue
+			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
 			bt.muxer = spdy.Client(conn, spdy.WithEncrypt(issue.Passwd))
 			bt.slog.Infof("连接 broker(%s) 成功", addr)
 			return nil

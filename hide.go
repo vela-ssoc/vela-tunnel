@@ -27,11 +27,16 @@ type Address struct {
 
 	// Name 是 TLS 证书验证的 servername，只有开启 TLS 连接时下才有作用
 	Name string `json:"name"`
+
+	eth bool
 }
 
 // String fmt.Stringer
 func (ad Address) String() string {
 	build := new(strings.Builder)
+	if ad.eth {
+		build.WriteString("eth ")
+	}
 	if ad.TLS {
 		build.WriteString("tls://")
 	} else {
