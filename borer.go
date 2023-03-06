@@ -37,38 +37,47 @@ type borerTunnel struct {
 	cancel  context.CancelFunc // context.CancelFunc
 }
 
+// ID 节点 ID
 func (bt *borerTunnel) ID() int64 {
 	return bt.issue.ID
 }
 
+// Inet 出口网卡的 IP 地址
 func (bt *borerTunnel) Inet() net.IP {
 	return bt.ident.Inet
 }
 
+// Hide 配置信息
 func (bt *borerTunnel) Hide() Hide {
 	return bt.hide
 }
 
+// Ident 认证信息
 func (bt *borerTunnel) Ident() Ident {
 	return bt.ident
 }
 
+// Issue 中心端认证成功后返回的信息
 func (bt *borerTunnel) Issue() Issue {
 	return bt.issue
 }
 
+// BrkAddr 当前连接的 broker 地址
 func (bt *borerTunnel) BrkAddr() *Address {
 	return bt.brkAddr
 }
 
+// Listen net.Listener
 func (bt *borerTunnel) Listen() net.Listener {
 	return bt.muxer
 }
 
+// NodeName 生成的节点名字
 func (bt *borerTunnel) NodeName() string {
 	return fmt.Sprintf("minion-%s-%d", bt.Inet(), bt.ID())
 }
 
+// Reconnect 断开连接并重连
 func (bt *borerTunnel) Reconnect(ctx context.Context) error {
 	_ = bt.muxer.Close()
 	bt.cancel()
@@ -78,10 +87,12 @@ func (bt *borerTunnel) Reconnect(ctx context.Context) error {
 	return bt.dial(ctx)
 }
 
+// Fetch 发送 HTTP 请求
 func (bt *borerTunnel) Fetch(ctx context.Context, op opurl.URLer, rd io.Reader) (*http.Response, error) {
 	return bt.client.Fetch(ctx, op, nil, rd)
 }
 
+// Oneway 单向请求，不关心返回的数据
 func (bt *borerTunnel) Oneway(ctx context.Context, op opurl.URLer, rd io.Reader) error {
 	res, err := bt.client.Fetch(ctx, op, nil, rd)
 	if err == nil {
@@ -90,18 +101,22 @@ func (bt *borerTunnel) Oneway(ctx context.Context, op opurl.URLer, rd io.Reader)
 	return err
 }
 
+// JSON 发送的数据进行 json 序列化，返回的报文会 json 反序列化
 func (bt *borerTunnel) JSON(ctx context.Context, op opurl.URLer, req any, reply any) error {
 	return bt.client.JSON(ctx, op, nil, req, reply)
 }
 
+// OnewayJSON 单向请求 json 数据，不关心返回数据
 func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opurl.URLer, req any) error {
 	return bt.client.OnewayJSON(ctx, op, nil, req)
 }
 
+// Attachment 下载文件
 func (bt *borerTunnel) Attachment(ctx context.Context, op opurl.URLer) (opurl.Attachment, error) {
 	return bt.client.Attachment(ctx, op)
 }
 
+// Stream 建立双向流
 func (bt *borerTunnel) Stream(op opurl.URLer, header http.Header) (*websocket.Conn, error) {
 	addr := op.String()
 	conn, _, err := bt.stream.Stream(addr, header)
@@ -238,6 +253,7 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	return ident, issue, nil
 }
 
+// waitN 计算需要休眠多久
 func (bt *borerTunnel) waitN(start time.Time) time.Duration {
 	since := time.Since(start)
 	du := time.Second
@@ -256,6 +272,7 @@ func (bt *borerTunnel) waitN(start time.Time) time.Duration {
 	return du
 }
 
+// sleepN 协程休眠
 func (bt *borerTunnel) sleepN(du time.Duration) error {
 	timer := time.NewTimer(du)
 	defer timer.Stop()

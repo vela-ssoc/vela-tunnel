@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/vela-ssoc/backend-common v0.0.0-20230303071013-a220adec95d5
+	github.com/vela-ssoc/backend-common v0.0.0-20230306011728-7e6645b4b8f5
 )
 
 require (
