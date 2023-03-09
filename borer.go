@@ -27,6 +27,7 @@ type borerTunnel struct {
 	ident   Ident              // ident
 	issue   Issue              // issue
 	dialer  dialer             // TCP 连接器
+	coder   JSONCoder          // JSON 编解码器
 	brkAddr *Address           // 当前连接的 broker 节点地址
 	muxer   spdy.Muxer         // 底层流复用
 	client  opurl.Client       // http 客户端
@@ -103,12 +104,23 @@ func (bt *borerTunnel) Oneway(ctx context.Context, op opurl.URLer, rd io.Reader)
 
 // JSON 发送的数据进行 json 序列化，返回的报文会 json 反序列化
 func (bt *borerTunnel) JSON(ctx context.Context, op opurl.URLer, req any, reply any) error {
-	return bt.client.JSON(ctx, op, nil, req, reply)
+	res, err := bt.fetchJSON(ctx, op, req)
+	if err != nil {
+		return err
+	}
+	//goland:noinspection GoUnhandledErrorResult
+	defer res.Body.Close()
+
+	return bt.coder.Unmarshal(res.Body, reply)
 }
 
 // OnewayJSON 单向请求 json 数据，不关心返回数据
 func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opurl.URLer, req any) error {
-	return bt.client.OnewayJSON(ctx, op, nil, req)
+	res, err := bt.fetchJSON(ctx, op, req)
+	if err == nil {
+		_ = res.Body.Close()
+	}
+	return err
 }
 
 // Attachment 下载文件
@@ -127,6 +139,18 @@ func (bt *borerTunnel) Stream(op opurl.URLer, header http.Header) (*websocket.Co
 	}
 
 	return conn, err
+}
+
+func (bt *borerTunnel) fetchJSON(ctx context.Context, op opurl.URLer, req any) (*http.Response, error) {
+	buf := new(bytes.Buffer)
+	if err := bt.coder.Marshal(buf, req); err != nil {
+		return nil, err
+	}
+	header := http.Header{
+		"Content-Type": []string{"application/json; charset=utf-8"},
+		"Accept":       []string{"application/json"},
+	}
+	return bt.client.Fetch(ctx, op, header, buf)
 }
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {

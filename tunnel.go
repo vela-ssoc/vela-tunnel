@@ -79,6 +79,9 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 	if opt.interval > 0 && (opt.interval < 10*time.Second || opt.interval > time.Hour) {
 		opt.interval = time.Minute
 	}
+	if opt.coder == nil {
+		opt.coder = new(stdJSON)
+	}
 
 	hide.Ethernet.Format()
 	hide.Internet.Format()
@@ -88,6 +91,7 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 		hide:   hide,
 		dialer: dial,
 		slog:   opt.slog,
+		coder:  opt.coder,
 	}
 	// 创建 stream 连接器
 	bt.stream = netutil.Stream(bt.dialContext)
