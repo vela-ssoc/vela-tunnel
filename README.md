@@ -129,7 +129,7 @@ over:
 // sonicJSON 以 bytedance/sonic 为例实现 JSONCoder 接口
 type sonicJSON struct{}
 
-func (s sonicJSON) Marshal(w io.Writer, val any) error { return encoder.NewStreamEncoder(w).Encode(val) }
-func (s sonicJSON) Unmarshal(r io.Reader, val any) error { return decoder.NewStreamDecoder(r).Decode(val) }
+func (sonicJSON) Marshal(w io.Writer, val any) error { return encoder.NewStreamEncoder(w).Encode(val) }
+func (sonicJSON) Unmarshal(r io.Reader, val any) error { return decoder.NewStreamDecoder(r).Decode(val) }
 
 ```
