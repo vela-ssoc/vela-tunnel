@@ -132,4 +132,5 @@ type sonicJSON struct{}
 func (sonicJSON) Marshal(w io.Writer, val any) error { return encoder.NewStreamEncoder(w).Encode(val) }
 func (sonicJSON) Unmarshal(r io.Reader, val any) error { return decoder.NewStreamDecoder(r).Decode(val) }
 
+tun, err := tunnel.Dial(ctx, hide, tunnel.WithJSONCoder(new(sonicJSON)))
 ```
