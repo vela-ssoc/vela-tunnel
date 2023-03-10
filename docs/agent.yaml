@@ -10,47 +10,24 @@ info:
     url: NONE
   termsOfService: 'https://github.com/vela-ssoc'
   contact:
-    name: ssoc
+    name: ssoc team
     url: 'https://github.com/vela-ssoc'
     email: hnwzy@live.com
 servers:
-  - url: /api/v1
+  - url: 'http://spdy-tunnel/api/v1'
     description: /api/v1
 tags:
+  - name: 配置脚本
+    description: 中心端配置脚本增/删/改时回调通知接口
+  - name: 三方文件
+    description: 中心端三方文件修改删除时回调通知接口
   - name: 程序事件
     description: agent 程序事件通知接口
-  - name: 通用请求响应
+  - name: 请求响应（RR）
     description: 通用请求响应类型的接口
-  - name: 通用 websocket 接口
+  - name: websocket 接口（WS）
     description: 通用 websocket 接口
 paths:
-  /afn/app/update:
-    parameters: []
-    post:
-      summary: 通知程序需要升级
-      operationId: post-afn-app-update
-      responses:
-        '200':
-          description: OK
-      description: 当收到程序升级指令时，代表 `Agent` 需要向 `Broker` 发起请求检查更新。
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                semver:
-                  type: string
-                  x-stoplight:
-                    id: xm8rd711zfytn
-                  description: 要求升级的版本号，如果为空则代表需要升级到最新版
-            examples:
-              请求示例:
-                value:
-                  server: 1.2.3
-        description: ''
-      tags:
-        - 程序事件
   '/arr/{path}':
     parameters:
       - schema:
@@ -67,70 +44,70 @@ paths:
           description: OK
       description: 通用请求响应类接口
       tags:
-        - 通用请求响应
+        - 请求响应（RR）
     post:
       summary: 请求响应类型的通用接口
       operationId: post-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     put:
       summary: 通用请求响应类接口
       operationId: put-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     patch:
       summary: 通用请求响应类接口
       operationId: patch-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     delete:
       summary: 通用请求响应类接口
       operationId: delete-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     head:
       summary: 通用请求响应类接口
       operationId: head-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     options:
       summary: 通用请求响应类接口
       operationId: options-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
     trace:
       summary: 通用请求响应类接口
       operationId: trace-arr-path
       responses:
         '200':
           description: OK
-      tags:
-        - 通用请求响应
       description: 通用请求响应类接口
+      tags:
+        - 请求响应（RR）
   '/aws/{path}':
     parameters:
       - schema:
@@ -141,8 +118,6 @@ paths:
         description: 自定义路径
     get:
       summary: websocket 接口
-      tags:
-        - 通用 websocket 接口
       responses:
         '100':
           description: websocket 建立成功
@@ -152,5 +127,54 @@ paths:
           description: 返回具体的错误信息
       operationId: get-aws-path
       description: '`/api/v1/aws/*path` '
+      tags:
+        - websocket 接口（WS）
+  /substance/change:
+    post:
+      summary: 配置脚本变更通知
+      operationId: post-substance-change
+      responses:
+        '200':
+          description: OK
+      description: 中心端对配置脚本作出修改会触发该接口
+      tags:
+        - 配置脚本
+    parameters: []
+  /third/change:
+    post:
+      summary: 三方文件变更
+      operationId: post-third-change
+      responses:
+        '200':
+          description: OK
+      tags:
+        - 三方文件
+      description: 三方文件变更
+  /app/update:
+    post:
+      summary: 程序更新通知
+      operationId: post-app-update
+      responses:
+        '200':
+          description: OK
+      description: 告知 `Agent` 进程需要检查更新
+      tags:
+        - 程序事件
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                semver:
+                  type: string
+                  description: 版本号
+            examples:
+              更新到指定版本:
+                value:
+                  semver: 1.2.3
+              更新至最新版本:
+                value: {}
+        description: ''
 components:
   schemas: {}
