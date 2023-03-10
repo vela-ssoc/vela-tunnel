@@ -3,7 +3,7 @@ x-stoplight:
   id: w9c5iq3rh9v42
 info:
   title: Agent 节点开放的接口
-  version: '1.0'
+  version: 1.0.0
   description: Agent 节点开放的接口
   license:
     name: NONE
