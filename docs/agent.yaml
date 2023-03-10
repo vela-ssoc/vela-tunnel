@@ -13,6 +13,8 @@ info:
     name: ssoc team
     url: 'https://github.com/vela-ssoc'
     email: hnwzy@live.com
+  x-logo:
+    url: logo.ico
 servers:
   - url: 'http://spdy-tunnel/api/v1'
     description: /api/v1
