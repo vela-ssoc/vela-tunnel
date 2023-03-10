@@ -42,7 +42,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     post:
@@ -51,7 +64,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     put:
@@ -60,7 +86,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     patch:
@@ -69,7 +108,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     delete:
@@ -78,7 +130,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     head:
@@ -87,7 +152,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     options:
@@ -96,7 +174,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     trace:
@@ -105,7 +196,20 @@ paths:
       responses:
         '200':
           description: OK
-      description: 通用请求响应类接口
+      description: |-
+        安全平台的操作数据流转如下：
+
+        `browser` -> `manager` -> `broker` -> `minion(agent)`
+
+        管理员通过浏览器（即：`browser`）界面对 Agent 进行操作管控，浏览器收到点击操作会请求 `manager`，`manager` 会进行鉴权、业务处理后将 `信息事件` 发给对应的代理节点（即：`broker`），`broker` 收到后也会做业务处理将 `信息事件` 通知给对应的 Agent（即：`minion` 或叫 `agent`）。
+
+        而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        >
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > 
+        > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
   '/aws/{path}':
