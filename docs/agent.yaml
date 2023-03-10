@@ -51,15 +51,21 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
     post:
-      summary: 请求响应类型的通用接口
+      summary: 通用请求响应类接口
       operationId: post-arr-path
       responses:
         '200':
@@ -73,10 +79,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -95,10 +107,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -117,10 +135,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -139,10 +163,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -161,10 +191,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -183,10 +219,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -205,10 +247,16 @@ paths:
 
         而 `/api/v1/arr/` 开头的 URL 会虽然经过层层代理将数据原样发送至对应的 Agent 节点，但是经过 `manager` 和 `broker` 均不会对报文做任何业务处理。
 
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
         > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
-        >
         > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
-        > 
         > - 具体的请求报文与响应报文根据实际业务而定。
       tags:
         - 请求响应（RR）
@@ -230,7 +278,20 @@ paths:
         '400':
           description: 返回具体的错误信息
       operationId: get-aws-path
-      description: '`/api/v1/aws/*path` '
+      description: |-
+        `/api/v1/aws/` 是 websocket 透传至 Agent 节点，功能类似于 `/api/v1/arr/` 接口，属于开放预留端口。 
+
+        URL 可以有多层，也可以带查询参数，如下均可以使用：
+
+        - /api/v1/arr/path
+        - /api/v1/arr/path1/path2
+        - /api/v1/arr/path1/path2/path3
+        - /api/v1/arr/path?name=kun&age=12&hobby=basketball
+        - /api/v1/arr/path1/path2?name=kun&hobbies=sing&hobbies=dance&hobbies=rap&hobbies=basketball
+
+        > - 严禁该接口用于控制业务逻辑，这样会绕过 `manager` 和 `broker` 的业务处理，可能会导致数据错乱。
+        > - 该接口属于扩展接口，用于管理员直接请求 Agent 节点。
+        > - 具体的请求报文根据实际业务而定。
       tags:
         - websocket 接口（WS）
   /substance/change:
