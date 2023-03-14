@@ -1,0 +1,25 @@
+openapi: 3.1.0
+x-stoplight:
+  id: tq50t1f1jmmi2
+info:
+  title: Broker 节点为 Agent 开放的接口
+  version: '1.0'
+  description: Broker 节点为 Agent 开放的接口，用于 `broker` 和 `agent` 之间的业务交互。
+  summary: broker 开放文档
+  contact:
+    name: ssoc team
+    url: 'https://github.com/vela-ssoc'
+    email: hnwzy@live.com
+  termsOfService: 'https://github.com/vela-ssoc'
+servers:
+  - url: 'http://spdy-tunnel/api/v1'
+    description: /api/v1
+paths:
+  /task:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses: {}
+      operationId: get-task
+components:
+  schemas: {}
