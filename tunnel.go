@@ -97,7 +97,7 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 	bt.stream = netutil.Stream(bt.dialContext)
 	// 创建 http 客户端
 	tran := &http.Transport{DialContext: bt.dialContext}
-	bt.client = opurl.NewClient(tran, opt.slog)
+	bt.client = opurl.NewClient(tran)
 
 	if err := bt.dial(parent); err != nil {
 		bt.slog.Warnf("连接 broker 失败：%v", err)
