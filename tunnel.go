@@ -10,8 +10,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/vela-ssoc/backend-common/logback"
-	"github.com/vela-ssoc/backend-common/netutil"
-	"github.com/vela-ssoc/backend-common/opurl"
+	"github.com/vela-ssoc/backend-common/transmit"
+	"github.com/vela-ssoc/backend-common/transmit/opcode"
 )
 
 // Tunneler agent 节点与 broker 的连接器
@@ -44,22 +44,22 @@ type Tunneler interface {
 	Reconnect(context.Context) error
 
 	// Fetch 请求响应式调用
-	Fetch(context.Context, opurl.URLer, io.Reader) (*http.Response, error)
+	Fetch(context.Context, opcode.URLer, io.Reader, http.Header) (*http.Response, error)
 
 	// Oneway 单向调用，不在乎返回值
-	Oneway(context.Context, opurl.URLer, io.Reader) error
+	Oneway(context.Context, opcode.URLer, io.Reader, http.Header) error
 
 	// JSON 请求与响应均为 json
-	JSON(context.Context, opurl.URLer, any, any) error
+	JSON(context.Context, opcode.URLer, any, any) error
 
 	// OnewayJSON 请求数据格式化为 json 后发送，不关心不解析返回数据
-	OnewayJSON(context.Context, opurl.URLer, any) error
+	OnewayJSON(context.Context, opcode.URLer, any) error
 
 	// Attachment 文件附件下载
-	Attachment(context.Context, opurl.URLer) (opurl.Attachment, error)
+	Attachment(context.Context, opcode.URLer) (transmit.Attachment, error)
 
 	// Stream 建立双向流
-	Stream(opurl.URLer, http.Header) (*websocket.Conn, error)
+	Stream(opcode.URLer, http.Header) (*websocket.Conn, error)
 }
 
 var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
@@ -94,10 +94,10 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 		coder:  opt.coder,
 	}
 	// 创建 stream 连接器
-	bt.stream = netutil.Stream(bt.dialContext)
+	bt.stream = transmit.NewStream(bt.dialContext)
 	// 创建 http 客户端
-	tran := &http.Transport{DialContext: bt.dialContext}
-	bt.client = opurl.NewClient(tran)
+	trip := &http.Transport{DialContext: bt.dialContext}
+	bt.client = transmit.NewClient(trip)
 
 	if err := bt.dial(parent); err != nil {
 		bt.slog.Warnf("连接 broker 失败：%v", err)

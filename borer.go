@@ -15,10 +15,12 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/vela-ssoc/backend-common/httpx"
 	"github.com/vela-ssoc/backend-common/logback"
-	"github.com/vela-ssoc/backend-common/netutil"
-	"github.com/vela-ssoc/backend-common/opurl"
+	"github.com/vela-ssoc/backend-common/problem"
 	"github.com/vela-ssoc/backend-common/spdy"
+	"github.com/vela-ssoc/backend-common/transmit"
+	"github.com/vela-ssoc/backend-common/transmit/opcode"
 )
 
 // borerTunnel 通道连接器
@@ -30,8 +32,8 @@ type borerTunnel struct {
 	coder   JSONCoder          // JSON 编解码器
 	brkAddr *Address           // 当前连接的 broker 节点地址
 	muxer   spdy.Muxer         // 底层流复用
-	client  opurl.Client       // http 客户端
-	stream  netutil.Streamer   // 建立流式通道用
+	client  transmit.Client    // http 客户端
+	stream  transmit.Streamer  // 建立流式通道用
 	slog    logback.Logger     // 日志输出组件
 	parent  context.Context    // parent context.Context
 	ctx     context.Context    // context.Context
@@ -89,33 +91,33 @@ func (bt *borerTunnel) Reconnect(ctx context.Context) error {
 }
 
 // Fetch 发送 HTTP 请求
-func (bt *borerTunnel) Fetch(ctx context.Context, op opurl.URLer, rd io.Reader) (*http.Response, error) {
-	return bt.client.Fetch(ctx, op, nil, rd)
+func (bt *borerTunnel) Fetch(ctx context.Context, op opcode.URLer, rd io.Reader, header http.Header) (*http.Response, error) {
+	return bt.client.Fetch(ctx, op, rd, header)
 }
 
 // Oneway 单向请求，不关心返回的数据
-func (bt *borerTunnel) Oneway(ctx context.Context, op opurl.URLer, rd io.Reader) error {
-	res, err := bt.client.Fetch(ctx, op, nil, rd)
+func (bt *borerTunnel) Oneway(ctx context.Context, op opcode.URLer, rd io.Reader, header http.Header) error {
+	res, err := bt.client.Fetch(ctx, op, rd, header)
 	if err == nil {
-		_ = res.Body.Close()
+		return res.Body.Close()
 	}
 	return err
 }
 
 // JSON 发送的数据进行 json 序列化，返回的报文会 json 反序列化
-func (bt *borerTunnel) JSON(ctx context.Context, op opurl.URLer, req any, reply any) error {
-	res, err := bt.fetchJSON(ctx, op, req)
+func (bt *borerTunnel) JSON(ctx context.Context, op opcode.URLer, body, resp any) error {
+	res, err := bt.fetchJSON(ctx, op, body)
 	if err != nil {
 		return err
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
 
-	return bt.coder.Unmarshal(res.Body, reply)
+	return bt.coder.Unmarshal(res.Body, resp)
 }
 
 // OnewayJSON 单向请求 json 数据，不关心返回数据
-func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opurl.URLer, req any) error {
+func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opcode.URLer, req any) error {
 	res, err := bt.fetchJSON(ctx, op, req)
 	if err == nil {
 		_ = res.Body.Close()
@@ -124,24 +126,17 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opurl.URLer, req any) 
 }
 
 // Attachment 下载文件
-func (bt *borerTunnel) Attachment(ctx context.Context, op opurl.URLer) (opurl.Attachment, error) {
+func (bt *borerTunnel) Attachment(ctx context.Context, op opcode.URLer) (transmit.Attachment, error) {
 	return bt.client.Attachment(ctx, op)
 }
 
 // Stream 建立双向流
-func (bt *borerTunnel) Stream(op opurl.URLer, header http.Header) (*websocket.Conn, error) {
-	addr := op.String()
-	conn, _, err := bt.stream.Stream(addr, header)
-	if err == nil {
-		bt.slog.Infof("建立 stream (%s) 通道成功", addr)
-	} else {
-		bt.slog.Warnf("建立 stream (%s) 通道失败：%s", addr, err)
-	}
-
+func (bt *borerTunnel) Stream(op opcode.URLer, header http.Header) (*websocket.Conn, error) {
+	conn, _, err := bt.stream.Stream(op, header)
 	return conn, err
 }
 
-func (bt *borerTunnel) fetchJSON(ctx context.Context, op opurl.URLer, req any) (*http.Response, error) {
+func (bt *borerTunnel) fetchJSON(ctx context.Context, op opcode.URLer, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	if err := bt.coder.Marshal(buf, req); err != nil {
 		return nil, err
@@ -150,7 +145,7 @@ func (bt *borerTunnel) fetchJSON(ctx context.Context, op opurl.URLer, req any) (
 		"Content-Type": []string{"application/json; charset=utf-8"},
 		"Accept":       []string{"application/json"},
 	}
-	return bt.client.Fetch(ctx, op, header, buf)
+	return bt.client.Fetch(ctx, op, buf, header)
 }
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {
@@ -167,7 +162,7 @@ over:
 		case <-bt.parent.Done():
 			break over
 		case <-ticker.C:
-			if err := bt.Oneway(nil, opurl.OpPing, nil); err != nil {
+			if err := bt.Oneway(nil, opcode.EndpointPing, nil, nil); err != nil {
 				bt.slog.Warnf("心跳包发送出错：%v", err)
 			}
 		}
@@ -237,7 +232,7 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	}
 
 	body := bytes.NewReader(enc)
-	req := bt.client.NewRequest(parent, opurl.MonJoin, nil, body)
+	req := bt.client.NewRequest(parent, opcode.EndpointMinion, body, nil)
 	host := addr.Name
 	if host == "" {
 		host, _, _ = net.SplitHostPort(addr.Addr)
@@ -258,15 +253,11 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	if code != http.StatusAccepted {
 		cause := make([]byte, 4096)
 		n, _ := io.ReadFull(res.Body, cause)
-		ret := struct {
-			Message string `json:"message"`
-		}{}
-		exr := &opurl.Error{Code: code}
-		if err = json.Unmarshal(cause[:n], &ret); err == nil {
-			exr.Text = []byte(ret.Message)
-		} else {
-			exr.Text = cause[:n]
+		pd := new(problem.Detail)
+		if err = json.Unmarshal(cause[:n], pd); err == nil {
+			return ident, issue, pd
 		}
+		exr := &httpx.Error{Code: code, Body: cause[:n]}
 		return ident, issue, exr
 	}
 
