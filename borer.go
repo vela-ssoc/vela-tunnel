@@ -195,6 +195,14 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			return nil
 		}
 
+		if he, ok := err.(*httpx.Error); ok && he.NotAcceptable() {
+			return he
+		} else if pde, ok := err.(problem.Detail); ok && pde.Status == http.StatusNotAcceptable {
+			return pde
+		} else if pe, ok := err.(*problem.Detail); ok && pe.Status == http.StatusNotAcceptable {
+			return pe
+		}
+
 		du := bt.waitN(start)
 		bt.slog.Warnf("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
 		if err = bt.sleepN(du); err != nil {
@@ -249,19 +257,18 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
 
+	resp := make([]byte, 10*1024)
 	code := res.StatusCode
 	if code != http.StatusAccepted {
-		cause := make([]byte, 4096)
-		n, _ := io.ReadFull(res.Body, cause)
+		n, _ := io.ReadFull(res.Body, resp)
 		pd := new(problem.Detail)
-		if err = json.Unmarshal(cause[:n], pd); err == nil {
+		if err = json.Unmarshal(resp[:n], pd); err == nil {
 			return ident, issue, pd
 		}
-		exr := &httpx.Error{Code: code, Body: cause[:n]}
+		exr := &httpx.Error{Code: code, Body: resp[:n]}
 		return ident, issue, exr
 	}
 
-	resp := make([]byte, 100*1024)
 	n, _ := res.Body.Read(resp)
 	err = issue.decrypt(resp[:n])
 
