@@ -32,7 +32,7 @@ func WithInterval(interval time.Duration) Option {
 	}
 }
 
-func WithJSONCoder(coder Coder) Option {
+func WithCoder(coder Coder) Option {
 	return func(opt *option) {
 		opt.coder = coder
 	}
