@@ -129,10 +129,14 @@ over:
 
 ```go
 // sonicJSON 以 bytedance/sonic 为例实现 JSONCoder 接口
-type sonicJSON struct{}
+type sonicJSON struct {
+    api sonic.API
+}
 
-func (sonicJSON) Marshal(w io.Writer, val any) error { return encoder.NewStreamEncoder(w).Encode(val) }
-func (sonicJSON) Unmarshal(r io.Reader, val any) error { return decoder.NewStreamDecoder(r).Decode(val) }
+func (sonicJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { return api.NewEncoder(w) }
+func (sonicJSON) NewDecoder(r io.Reader) interface{ Decode(any) error } { return api.NewDecoder(r) }
 
-tun, err := tunnel.Dial(ctx, hide, tunnel.WithJSONCoder(new(sonicJSON)))
+coder := &sonicJSON{api: sonic.ConfigStd}
+tun, err := tunnel.Dial(ctx, hide, tunnel.WithCoder(coder))
+
 ```

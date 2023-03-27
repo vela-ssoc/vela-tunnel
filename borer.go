@@ -29,7 +29,7 @@ type borerTunnel struct {
 	ident   Ident              // ident
 	issue   Issue              // issue
 	dialer  dialer             // TCP 连接器
-	coder   JSONCoder          // JSON 编解码器
+	coder   Coder              // JSON 编解码器
 	brkAddr *Address           // 当前连接的 broker 节点地址
 	muxer   spdy.Muxer         // 底层流复用
 	client  transmit.Client    // http 客户端
@@ -113,7 +113,7 @@ func (bt *borerTunnel) JSON(ctx context.Context, op opcode.URLer, body, resp any
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
 
-	return bt.coder.Unmarshal(res.Body, resp)
+	return bt.coder.NewDecoder(res.Body).Decode(resp)
 }
 
 // OnewayJSON 单向请求 json 数据，不关心返回数据
@@ -138,7 +138,7 @@ func (bt *borerTunnel) Stream(op opcode.URLer, header http.Header) (*websocket.C
 
 func (bt *borerTunnel) fetchJSON(ctx context.Context, op opcode.URLer, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
-	if err := bt.coder.Marshal(buf, req); err != nil {
+	if err := bt.coder.NewEncoder(buf).Encode(req); err != nil {
 		return nil, err
 	}
 	header := http.Header{
