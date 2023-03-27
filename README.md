@@ -128,13 +128,13 @@ over:
 ## 自定义 json 编解码
 
 ```go
-// sonicJSON 以 bytedance/sonic 为例实现 JSONCoder 接口
+// sonicJSON 以 bytedance/sonic 为例实现 Coder 接口
 type sonicJSON struct {
     api sonic.API
 }
 
-func (sonicJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { return api.NewEncoder(w) }
-func (sonicJSON) NewDecoder(r io.Reader) interface{ Decode(any) error } { return api.NewDecoder(r) }
+func (s sonicJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { return s.api.NewEncoder(w) }
+func (s sonicJSON) NewDecoder(r io.Reader) interface{ Decode(any) error } { return s.api.NewDecoder(r) }
 
 coder := &sonicJSON{api: sonic.ConfigStd}
 tun, err := tunnel.Dial(ctx, hide, tunnel.WithCoder(coder))
