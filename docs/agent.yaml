@@ -19,16 +19,12 @@ servers:
   - url: 'http://spdy-tunnel/api/v1'
     description: /api/v1
 tags:
-  - name: 配置脚本
-    description: 中心端配置脚本增/删/改时回调通知接口
-  - name: 三方文件
-    description: 中心端三方文件修改删除时回调通知接口
-  - name: 程序事件
-    description: agent 程序事件通知接口
   - name: 请求响应（RR）
     description: 通用请求响应类型的接口
   - name: websocket 接口（WS）
     description: 通用 websocket 接口
+  - name: 命令下发
+    description: 中心端命令下发调用接口
 paths:
   '/arr/{path}':
     parameters:
@@ -296,52 +292,15 @@ paths:
         > - 具体的请求报文根据实际业务而定。
       tags:
         - websocket 接口（WS）
-  /substance/change:
+  /edict/substance/event:
     post:
-      summary: 配置脚本变更通知
-      operationId: post-substance-change
-      responses:
-        '200':
-          description: OK
-      description: 中心端对配置脚本作出修改会触发该接口
-      tags:
-        - 配置脚本
-    parameters: []
-  /third/change:
-    post:
-      summary: 三方文件变更
-      operationId: post-third-change
+      summary: 配置变更
+      operationId: post-edict-substance-event
       responses:
         '200':
           description: OK
       tags:
-        - 三方文件
-      description: 三方文件变更
-  /app/update:
-    post:
-      summary: 程序更新通知
-      operationId: post-app-update
-      responses:
-        '200':
-          description: OK
-      description: 告知 `Agent` 进程需要检查更新
-      tags:
-        - 程序事件
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                semver:
-                  type: string
-                  description: 版本号
-            examples:
-              更新到指定版本:
-                value:
-                  semver: 1.2.3
-              更新至最新版本:
-                value: {}
-        description: ''
+        - 命令下发
+      description: 当中心端配置发生变更或配置重组时，会触发该接口。
 components:
   schemas: {}
