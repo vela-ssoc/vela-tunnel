@@ -298,12 +298,11 @@ func (bt *borerTunnel) waitN(start time.Time) time.Duration {
 func (bt *borerTunnel) sleepN(du time.Duration) error {
 	timer := time.NewTimer(du)
 	defer timer.Stop()
-	var err error
 	ctx := bt.ctx
 	select {
 	case <-timer.C:
 	case <-ctx.Done():
-		err = ctx.Err()
+		return ctx.Err()
 	}
-	return err
+	return nil
 }

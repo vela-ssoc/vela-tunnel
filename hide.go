@@ -10,25 +10,42 @@ import (
 // 注意：实际线上正式发布后，只能从自身读出隐写配置，强烈不建议使用开发模式
 // 读取配置。
 type Hide struct {
-	Semver   string    `json:"semver"`   // 节点版本号
-	Ethernet Addresses `json:"ethernet"` // 内网连接地址
-	Internet Addresses `json:"internet"` // 外网连接地址
+	// Semver 版本号，要遵循：https://semver.org/lang/zh-CN/
+	Semver string `json:"semver"`
+
+	// Ethernet 内网连接地址
+	Ethernet Addresses `json:"ethernet"`
+
+	// Internet 外网连接地址
+	Internet Addresses `json:"internet"`
 }
 
 // Address broker 的服务地址
 type Address struct {
 	// TLS 服务端是否开启了 TLS
-	TLS bool `json:"tls"`
+	TLS bool `json:"tls" yaml:"tls"`
 
-	// Addr 服务端连接地址，格式为 域名、域名+端口、IP、IP+端口。
-	// 如：ssoc.lan / ssoc.lan:8899 / 10.10.10.18 / 10.10.10.18:8443
-	// 如果未写明端口，则开启 TLS 是 443，未开启则是 80
-	Addr string `json:"addr"`
+	// Addr 服务端地址，只需要填写地址或地址端口号，不需要路径
+	// Example:
+	//  	- soc.xxx.com
+	//  	- soc.xxx.com:9090
+	//		- 10.10.10.2
+	// 		- 10.10.10.2:9090
+	// 如果没有显式指明端口号，则开启 TLS 默认为 443，未开启 TLS 默认为 80
+	Addr string `json:"addr" yaml:"addr"`
 
-	// Name 是 TLS 证书验证的 servername，只有开启 TLS 连接时下才有作用
-	Name string `json:"name"`
+	// Name 主机名或 TLS SNI 名称
+	// 无论是否开启 TLS，在发起 HTTP 请求时该 Name 都会被设置为 Host。
+	// 当开启 TLS 时该 Name 会被设置为校验证书的 Servername。
+	// 如果该字段为空，则默认使用 Addr 的地址作为主机名。
+	Name string `json:"name" yaml:"name"`
 
+	// eth 是否是内网配置
 	eth bool
+}
+
+func (ad Address) Ethernet() bool {
+	return ad.eth
 }
 
 // String fmt.Stringer
@@ -56,14 +73,20 @@ func (ad Address) String() string {
 // Addresses broker 地址切片
 type Addresses []*Address
 
-// Format 对地址进行格式化处理，即：如果地址内有显式端口号，
+// Preformat 对地址进行格式化处理，即：如果地址内有显式端口号，
 // 则根据是否开启 TLS 补充默认端口号
-func (ads Addresses) Format() {
+func (ads Addresses) Preformat() {
 	for _, ad := range ads {
 		addr := ad.Addr
-		_, port, err := net.SplitHostPort(addr)
+		host, port, err := net.SplitHostPort(addr)
 		if err == nil && port != "" {
+			if ad.Name == "" {
+				ad.Name = host
+			}
 			continue
+		}
+		if ad.Name == "" {
+			ad.Name = addr
 		}
 		if ad.TLS {
 			ad.Addr = addr + ":443"

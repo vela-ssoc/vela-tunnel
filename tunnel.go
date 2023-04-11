@@ -83,9 +83,9 @@ func Dial(parent context.Context, hide Hide, opts ...Option) (Tunneler, error) {
 		opt.coder = new(stdJSON)
 	}
 
-	hide.Ethernet.Format()
-	hide.Internet.Format()
-
+	// 对地址预先处理
+	hide.Ethernet.Preformat()
+	hide.Internet.Preformat()
 	dial := newDialer(hide.Ethernet, hide.Internet)
 	bt := &borerTunnel{
 		hide:   hide,

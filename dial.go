@@ -47,7 +47,9 @@ func (dl *iterDial) iterDial(parent context.Context, timeout time.Duration) (net
 	defer cancel()
 
 	if addr.TLS {
-		conn, err := dl.dial.DialContext(ctx, "tcp", addr.Addr)
+		dial := dl.dial
+		dial.Config = &tls.Config{ServerName: addr.Name}
+		conn, err := dial.DialContext(ctx, "tcp", addr.Addr)
 		return conn, addr, err
 	} else {
 		conn, err := dl.dial.NetDialer.DialContext(ctx, "tcp", addr.Addr)

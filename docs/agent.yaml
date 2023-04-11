@@ -301,6 +301,19 @@ paths:
           description: OK
       tags:
         - 命令下发
-      description: 当中心端配置发生变更或配置重组时，会触发该接口。
+      description: |
+        当中心端配置发生变更或配置重组时，会触发该接口。
+
+        节点检查更新时应该开启异步更新。
+  /edict/third/event:
+    post:
+      summary: 三方文件变更
+      operationId: post-edict-third-event
+      responses:
+        '200':
+          description: OK
+      tags:
+        - 命令下发
+      description: 三方文件变更，异步处理更新。
 components:
   schemas: {}
