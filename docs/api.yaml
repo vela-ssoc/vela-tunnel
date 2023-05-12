@@ -1,0 +1,189 @@
+openapi: 3.1.0
+x-stoplight:
+  id: c9vjkvk4f45fu
+info:
+  title: Agent 与 Broker 节点对接文档
+  version: '1.0'
+  description: Agent 与 Broker 节点对接文档
+  contact:
+    name: ssoc
+    url: 'https://github.com/vela-ssoc'
+  termsOfService: 'https://github.com/vela-ssoc'
+  summary: Agent 与 Broker 节点对接文档
+  x-logo:
+    url: logo.ico
+tags:
+  - name: Agent
+    description: Agent 需要提供的接口
+  - name: Broker
+    description: Broker 需要提供的接口
+servers:
+  - url: /api/v1
+    description: 基础路径
+paths:
+  /edict/substance/event:
+    post:
+      summary: 配置变更回调
+      operationId: post-edict-substance-event
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: |-
+        当中心端的配置发生变更时，`Broker` 会调用该接口。
+        也就是说：当 `Agent` 该接口被触发时，代表中心端的配置有修改，`Agent` 需要进行 [配置上报同步](/operations/post-task)。
+  /edict/third/event:
+    post:
+      summary: 三方文件变更回调
+      operationId: post-edict-third-event
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: |-
+        当中心端的三方文件发生变更时，`Broker` 会调用该接口。
+        也就是说：当 `Agent` 该接口被触发时，代表中心端的三方文件有修改，`Agent` 需要执行三方文件逻辑。
+  /task:
+    post:
+      summary: 配置上报同步
+      operationId: post-task
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  Example 1:
+                    removes:
+                      - '63372480515067905'
+                      - '63646674339418112'
+                    updates:
+                      - id: '63653367643295744'
+                        name: mysql-honeypot
+                        dialect: true
+                        hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
+                        chunk: cHJpbnQoImhlbGxvIik=
+                description: 需要删除的配置
+                properties:
+                  removes:
+                    type: array
+                    description: 配置 ID
+                    items:
+                      type: string
+                  updates:
+                    type: array
+                    description: 需要更新的配置
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: 配置 ID
+                        name:
+                          type: string
+                          description: 配置名称
+                        dialect:
+                          type: boolean
+                          description: 是否是私有配置
+                        hash:
+                          type: string
+                          description: 配置的哈希
+                        chunk:
+                          type: string
+                          description: 配置内容本体
+              examples:
+                响应示例:
+                  value:
+                    removes:
+                      - '63372480515067905'
+                      - '63646674339418112'
+                    updates:
+                      - id: '63653367643295744'
+                        name: mysql-honeypot
+                        dialect: true
+                        hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
+                        chunk: cHJpbnQoImhlbGxvIik=
+      tags:
+        - Broker
+      description: 配置文件上报及同步接口
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              x-examples:
+                Example 1:
+                  data:
+                    - id: '63308517257433088'
+                      inet: 172.31.61.150
+                      dialect: false
+                      name: kafka
+                      status: running
+                      hash: 78f8bb4c43c7c3e4e5883e8e9b18518c89d965ff
+                      uptime: '2023-05-12T03:38:16.712Z'
+                      from: tunnel
+                      runners:
+                        - name: listen.snapshot.1
+                          type: '*ss.ListenSnap'
+                          status: panic
+              properties:
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: 配置 ID
+                      name:
+                        type: string
+                        description: 配置名字
+                      dialect:
+                        type: boolean
+                        description: 是否是私有配置
+                      status:
+                        type: string
+                        description: 配置运行状态
+                      hash:
+                        type: string
+                        description: 配置哈希
+                      uptime:
+                        type: string
+                        description: 配置启动时间
+                      from:
+                        type: string
+                        description: 配置来源模块
+                      runners:
+                        type: array
+                        description: 配置内部组件运行信息
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            type:
+                              type: string
+                            status:
+                              type: string
+            examples:
+              请求示例:
+                value:
+                  data:
+                    - id: '63308517257433088'
+                      inet: 172.31.61.150
+                      dialect: false
+                      name: kafka
+                      status: running
+                      hash: 78f8bb4c43c7c3e4e5883e8e9b18518c89d965ff
+                      uptime: '2023-05-12T03:38:16.712Z'
+                      from: tunnel
+                      runners:
+                        - name: listen.snapshot.1
+                          type: '*ss.ListenSnap'
+                          status: panic
+components:
+  schemas: {}
