@@ -181,6 +181,5 @@ paths:
       description: |-
         当中心端的三方文件发生变更时，`Broker` 会调用该接口。
         也就是说：当 `Agent` 该接口被触发时，代表中心端的三方文件有修改，`Agent` 需要执行三方文件逻辑。
-  /task: {}
 components:
   schemas: {}
