@@ -6,9 +6,15 @@ import (
 	"time"
 )
 
+// Processor 中心端回调事件处理器
 type Processor interface {
+	// Substance 任务配置删除/修改时的处理器
 	Substance(ctx context.Context, removes []int64, updates []*TaskChunk) ([]*TaskStatus, error)
+
+	// ThirdUpdate 三方文件修改时会回调该接口
 	ThirdUpdate(ctx context.Context, id int64) error
+
+	// ThirdRemove 三方文件删除时会回调该接口
 	ThirdRemove(ctx context.Context, id int64) error
 }
 

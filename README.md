@@ -17,7 +17,7 @@ func main() {
 	// proc 要实现 tunnel.Processor 接口
 	proc := new(velaProcess)
 	ctx := context.Background()
-	hide := tunnel.Hide{}
+	hide := tunnel.Hide{} // 自行注入参数
 	tun, err := tunnel.Dial(ctx, hide, proc)
 	if err != nil {
 		panic(err)
@@ -58,6 +58,6 @@ func (s sonicJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { retu
 func (s sonicJSON) NewDecoder(r io.Reader) interface{ Decode(any) error } { return s.api.NewDecoder(r) }
 
 coder := &sonicJSON{api: sonic.ConfigStd}
-tun, err := tunnel.Dial(ctx, hide, tunnel.WithCoder(coder))
+tun, err := tunnel.Dial(ctx, hide, proc, tunnel.WithCoder(coder))
 
 ```
