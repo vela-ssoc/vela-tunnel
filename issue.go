@@ -3,7 +3,7 @@ package tunnel
 import (
 	"encoding/json"
 
-	"github.com/vela-ssoc/backend-common/encipher"
+	"github.com/vela-ssoc/vela-common-mba/encipher"
 )
 
 // Issue 认证成功后服务端返回的必要信息

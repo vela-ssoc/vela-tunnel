@@ -10,7 +10,9 @@ import (
 // 注意：实际线上正式发布后，只能从自身读出隐写配置，强烈不建议使用开发模式
 // 读取配置。
 type Hide struct {
-	// Semver 版本号，要遵循：https://semver.org/lang/zh-CN/
+	// Semver 版本号，要遵循 [SemVer] 语义化版本
+	//
+	// [SemVer]: https://semver.org/lang/zh-CN/
 	Semver string `json:"semver"`
 
 	// Ethernet 内网连接地址

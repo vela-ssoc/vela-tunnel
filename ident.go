@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/vela-ssoc/backend-common/encipher"
+	"github.com/vela-ssoc/vela-common-mba/encipher"
 )
 
 // Ident minion 节点握手认证时需要携带的信息，

@@ -4,23 +4,20 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/user"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vela-ssoc/backend-common/httpx"
-	"github.com/vela-ssoc/backend-common/logback"
-	"github.com/vela-ssoc/backend-common/problem"
-	"github.com/vela-ssoc/backend-common/spdy"
-	"github.com/vela-ssoc/backend-common/transmit"
-	"github.com/vela-ssoc/backend-common/transmit/opcode"
+	"github.com/vela-ssoc/vela-common-mba/netutil"
+	"github.com/vela-ssoc/vela-common-mba/spdy"
 )
 
 // borerTunnel 通道连接器
@@ -32,9 +29,9 @@ type borerTunnel struct {
 	coder   Coder              // JSON 编解码器
 	brkAddr *Address           // 当前连接的 broker 节点地址
 	muxer   spdy.Muxer         // 底层流复用
-	client  transmit.Client    // http 客户端
-	stream  transmit.Streamer  // 建立流式通道用
-	slog    logback.Logger     // 日志输出组件
+	client  netutil.HTTPClient // http 客户端
+	stream  netutil.Streamer   // 建立流式通道用
+	slog    Logger             // 日志输出组件
 	parent  context.Context    // parent context.Context
 	ctx     context.Context    // context.Context
 	cancel  context.CancelFunc // context.CancelFunc
@@ -70,34 +67,19 @@ func (bt *borerTunnel) BrkAddr() *Address {
 	return bt.brkAddr
 }
 
-// Listen net.Listener
-func (bt *borerTunnel) Listen() net.Listener {
-	return bt.muxer
-}
-
 // NodeName 生成的节点名字
 func (bt *borerTunnel) NodeName() string {
 	return fmt.Sprintf("minion-%s-%d", bt.Inet(), bt.ID())
 }
 
-// Reconnect 断开连接并重连
-func (bt *borerTunnel) Reconnect(ctx context.Context) error {
-	_ = bt.muxer.Close()
-	bt.cancel()
-	if ctx == nil {
-		ctx = bt.parent
-	}
-	return bt.dial(ctx)
-}
-
 // Fetch 发送 HTTP 请求
-func (bt *borerTunnel) Fetch(ctx context.Context, op opcode.URLer, rd io.Reader, header http.Header) (*http.Response, error) {
-	return bt.client.Fetch(ctx, op, rd, header)
+func (bt *borerTunnel) Fetch(ctx context.Context, path string, rd io.Reader, header http.Header) (*http.Response, error) {
+	return bt.fetch(ctx, http.MethodPost, path, rd, header)
 }
 
 // Oneway 单向请求，不关心返回的数据
-func (bt *borerTunnel) Oneway(ctx context.Context, op opcode.URLer, rd io.Reader, header http.Header) error {
-	res, err := bt.client.Fetch(ctx, op, rd, header)
+func (bt *borerTunnel) Oneway(ctx context.Context, path string, rd io.Reader, header http.Header) error {
+	res, err := bt.fetch(ctx, http.MethodPost, path, rd, header)
 	if err == nil {
 		return res.Body.Close()
 	}
@@ -105,8 +87,8 @@ func (bt *borerTunnel) Oneway(ctx context.Context, op opcode.URLer, rd io.Reader
 }
 
 // JSON 发送的数据进行 json 序列化，返回的报文会 json 反序列化
-func (bt *borerTunnel) JSON(ctx context.Context, op opcode.URLer, body, resp any) error {
-	res, err := bt.fetchJSON(ctx, op, body)
+func (bt *borerTunnel) JSON(ctx context.Context, path string, body, resp any) error {
+	res, err := bt.fetchJSON(ctx, path, body)
 	if err != nil {
 		return err
 	}
@@ -117,8 +99,8 @@ func (bt *borerTunnel) JSON(ctx context.Context, op opcode.URLer, body, resp any
 }
 
 // OnewayJSON 单向请求 json 数据，不关心返回数据
-func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opcode.URLer, req any) error {
-	res, err := bt.fetchJSON(ctx, op, req)
+func (bt *borerTunnel) OnewayJSON(ctx context.Context, path string, req any) error {
+	res, err := bt.fetchJSON(ctx, path, req)
 	if err == nil {
 		_ = res.Body.Close()
 	}
@@ -126,17 +108,19 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, op opcode.URLer, req any)
 }
 
 // Attachment 下载文件
-func (bt *borerTunnel) Attachment(ctx context.Context, op opcode.URLer) (transmit.Attachment, error) {
-	return bt.client.Attachment(ctx, op)
+func (bt *borerTunnel) Attachment(ctx context.Context, path string) (netutil.Attachment, error) {
+	addr := bt.httpURL(path)
+	return bt.client.Attachment(ctx, http.MethodGet, addr, nil, nil)
 }
 
 // Stream 建立双向流
-func (bt *borerTunnel) Stream(op opcode.URLer, header http.Header) (*websocket.Conn, error) {
-	conn, _, err := bt.stream.Stream(op, header)
+func (bt *borerTunnel) Stream(ctx context.Context, path string, header http.Header) (*websocket.Conn, error) {
+	addr := bt.wsURL(path)
+	conn, _, err := bt.stream.Stream(ctx, addr, header)
 	return conn, err
 }
 
-func (bt *borerTunnel) fetchJSON(ctx context.Context, op opcode.URLer, req any) (*http.Response, error) {
+func (bt *borerTunnel) fetchJSON(ctx context.Context, path string, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	if err := bt.coder.NewEncoder(buf).Encode(req); err != nil {
 		return nil, err
@@ -145,7 +129,29 @@ func (bt *borerTunnel) fetchJSON(ctx context.Context, op opcode.URLer, req any) 
 		"Content-Type": []string{"application/json; charset=utf-8"},
 		"Accept":       []string{"application/json"},
 	}
-	return bt.client.Fetch(ctx, op, buf, header)
+	return bt.fetch(ctx, http.MethodPost, path, buf, header)
+}
+
+func (bt *borerTunnel) fetch(ctx context.Context, method, path string, rd io.Reader, header http.Header) (*http.Response, error) {
+	addr := bt.httpURL(path)
+	return bt.client.Fetch(ctx, method, addr, rd, header)
+}
+
+func (bt *borerTunnel) httpURL(path string) string {
+	return bt.newURL("http", path)
+}
+
+func (bt *borerTunnel) wsURL(path string) string {
+	return bt.newURL("ws", path)
+}
+
+func (bt *borerTunnel) newURL(scheme, path string) string {
+	sn := strings.SplitN(path, "?", 2)
+	u := &url.URL{Scheme: scheme, Host: "soc", Path: sn[0]}
+	if len(sn) == 2 {
+		u.RawQuery = sn[1]
+	}
+	return u.String()
 }
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {
@@ -156,14 +162,15 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 	ticker := time.NewTicker(inter)
 	defer ticker.Stop()
 
+	const endpoint = "/api/v1/minion/ping"
 over:
 	for {
 		select {
 		case <-bt.parent.Done():
 			break over
 		case <-ticker.C:
-			if err := bt.Oneway(nil, opcode.EndpointPing, nil, nil); err != nil {
-				bt.slog.Warnf("心跳包发送出错：%v", err)
+			if err := bt.Oneway(nil, endpoint, nil, nil); err != nil {
+				bt.slog.Infof("心跳包发送出错：%v", err)
 			}
 		}
 	}
@@ -174,12 +181,12 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 	bt.ctx, bt.cancel = context.WithCancel(parent)
 	start := time.Now()
 
-	bt.slog.Info("开始连接 broker ...")
+	bt.slog.Infof("开始连接 broker ...")
 	for {
 		conn, addr, err := bt.dialer.iterDial(bt.ctx, 3*time.Second)
 		if err != nil {
 			du := bt.waitN(start)
-			bt.slog.Warnf("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
+			bt.slog.Infof("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
 			if err = bt.sleepN(du); err != nil {
 				return err
 			}
@@ -195,16 +202,12 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			return nil
 		}
 
-		if he, ok := err.(*httpx.Error); ok && he.NotAcceptable() {
+		if he, ok := err.(*netutil.HTTPError); ok && he.NotAcceptable() {
 			return he
-		} else if pde, ok := err.(problem.Detail); ok && pde.Status == http.StatusNotAcceptable {
-			return pde
-		} else if pe, ok := err.(*problem.Detail); ok && pe.Status == http.StatusNotAcceptable {
-			return pe
 		}
 
 		du := bt.waitN(start)
-		bt.slog.Warnf("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
+		bt.slog.Infof("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
 		if err = bt.sleepN(du); err != nil {
 			return err
 		}
@@ -239,8 +242,13 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 		return ident, issue, err
 	}
 
+	const endpoint = "/api/v1/minion"
 	body := bytes.NewReader(enc)
-	req := bt.client.NewRequest(parent, opcode.EndpointMinion, body, nil)
+	req, err := bt.client.NewRequest(parent, http.MethodConnect, endpoint, body, nil)
+	if err != nil {
+		return ident, issue, err
+	}
+
 	host := addr.Name
 	if host == "" {
 		host, _, _ = net.SplitHostPort(addr.Addr)
@@ -261,11 +269,7 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	code := res.StatusCode
 	if code != http.StatusAccepted {
 		n, _ := io.ReadFull(res.Body, resp)
-		pd := new(problem.Detail)
-		if err = json.Unmarshal(resp[:n], pd); err == nil {
-			return ident, issue, pd
-		}
-		exr := &httpx.Error{Code: code, Body: resp[:n]}
+		exr := &netutil.HTTPError{Code: code, Body: resp[:n]}
 		return ident, issue, exr
 	}
 
@@ -305,4 +309,27 @@ func (bt *borerTunnel) sleepN(du time.Duration) error {
 		return ctx.Err()
 	}
 	return nil
+}
+
+func (bt *borerTunnel) serve(proc Processor) {
+	app := &webapp{code: bt.coder, proc: proc}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1/edict/substance/event", app.substance)
+	mux.HandleFunc("/api/v1/edict/third/event", app.third)
+
+	ctx := bt.parent
+	var err error
+	for {
+		lis := bt.muxer
+		_ = http.Serve(lis, mux) // 如果连接正常则会阻塞在此
+		if err = ctx.Err(); err != nil {
+			break
+		}
+
+		bt.slog.Infof("连接已经断开，即将重连：%s", err)
+		if err = bt.dial(ctx); err != nil {
+			break
+		}
+		bt.slog.Infof("重连成功")
+	}
 }

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"time"
-
-	"github.com/vela-ssoc/backend-common/logback"
 )
 
 // Option 方法
@@ -13,13 +11,14 @@ type Option func(*option)
 
 // option 参数
 type option struct {
-	coder    Coder          // json 编解码器
-	slog     logback.Logger // 日志输出组件
-	interval time.Duration  // 心跳包发送间隔
+	proc     Processor     // 消息事件处理器
+	coder    Coder         // json 编解码器
+	slog     Logger        // 日志输出组件
+	interval time.Duration // 心跳包发送间隔
 }
 
 // WithLogger 设置日志输出组件
-func WithLogger(slog logback.Logger) Option {
+func WithLogger(slog Logger) Option {
 	return func(opt *option) {
 		opt.slog = slog
 	}
