@@ -37,7 +37,7 @@ func WithCoder(coder Coder) Option {
 	}
 }
 
-// WithNotifier 一旦设置了该 handler，则跳过 proc 的回调
+// WithNotifier 状态事件回调
 func WithNotifier(ntf Notifier) Option {
 	return func(opt *option) {
 		opt.ntf = ntf

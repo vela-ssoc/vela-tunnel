@@ -312,20 +312,23 @@ func (bt *borerTunnel) sleepN(du time.Duration) error {
 	return nil
 }
 
-func (bt *borerTunnel) serve(handler http.Handler) {
+func (bt *borerTunnel) serveHTTP(srv Server) {
 	ctx := bt.parent
 	ntf := bt.ntf
 	var err error
 	for {
-		lis := bt.muxer
-		ser := http.Serve(lis, handler) // 如果连接正常则会阻塞在此
-		ntf.Disconnect(ser)
+		ln := bt.muxer
+
+		// 如果连接正常则会阻塞在此
+		exx := srv.Serve(ln)
+
+		ntf.Disconnect(exx)
 		if err = ctx.Err(); err != nil {
 			bt.slog.Warnf("连接已经断开不再重连：%s", err)
 			break
 		}
 
-		bt.slog.Warnf("连接已经断开，即将重连：%s", ser)
+		bt.slog.Warnf("连接已经断开，即将重连：%s", exx)
 		if err = bt.dial(ctx); err != nil {
 			bt.slog.Warnf("重连失败退出：%s", err)
 			break

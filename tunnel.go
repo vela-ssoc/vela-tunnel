@@ -56,7 +56,11 @@ type Tunneler interface {
 
 var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
 
-func Dial(parent context.Context, hide Hide, handler http.Handler, opts ...Option) (Tunneler, error) {
+type Server interface {
+	Serve(ln net.Listener) error
+}
+
+func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunneler, error) {
 	if len(hide.Ethernet) == 0 && len(hide.Internet) == 0 {
 		return nil, ErrEmptyAddress
 	}
@@ -67,9 +71,6 @@ func Dial(parent context.Context, hide Hide, handler http.Handler, opts ...Optio
 	}
 	if opt.slog == nil {
 		opt.slog = new(stdLog)
-	}
-	if handler == nil {
-		handler = http.NewServeMux()
 	}
 	if opt.coder == nil {
 		opt.coder = new(stdJSON)
@@ -108,7 +109,7 @@ func Dial(parent context.Context, hide Hide, handler http.Handler, opts ...Optio
 	}
 
 	// 开启监听
-	go bt.serve(handler)
+	go bt.serveHTTP(srv)
 
 	return bt, nil
 }

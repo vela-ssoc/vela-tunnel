@@ -1,8 +1,4 @@
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230522032416-e6ba269947d2 h1:0krh2PMTisaqvPNmgNdyLKIaUIND0xWEYTXiNL4BIpU=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230522032416-e6ba269947d2/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230522045026-b2ef1b216402 h1:chN4TV6rNxO3GaVD08gYxTIDXvzrBzNK8gmoXbS03aQ=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230522045026-b2ef1b216402/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20230522054100-2e70a5f43566 h1:p/mv1xq/8FjgBrYJFojT9fNWWOws+Siiw1GwaM0BkQE=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20230522054100-2e70a5f43566/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
