@@ -321,13 +321,13 @@ func (bt *borerTunnel) serve(proc Processor) {
 	var err error
 	for {
 		lis := bt.muxer
-		_ = http.Serve(lis, mux) // 如果连接正常则会阻塞在此
+		ser := http.Serve(lis, mux) // 如果连接正常则会阻塞在此
 		if err = ctx.Err(); err != nil {
 			bt.slog.Warnf("连接已经断开不再重连：%s", err)
 			break
 		}
 
-		bt.slog.Warnf("连接已经断开，即将重连：%s", err)
+		bt.slog.Warnf("连接已经断开，即将重连：%s", ser)
 		if err = bt.dial(ctx); err != nil {
 			bt.slog.Warnf("重连失败退出：%s", err)
 			break
