@@ -11,9 +11,9 @@ type Option func(*option)
 
 // option 参数
 type option struct {
-	proc     Processor     // 消息事件处理器
 	coder    Coder         // json 编解码器
 	slog     Logger        // 日志输出组件
+	ntf      Notifier      // 通道连接事件通知
 	interval time.Duration // 心跳包发送间隔
 }
 
@@ -34,6 +34,13 @@ func WithInterval(interval time.Duration) Option {
 func WithCoder(coder Coder) Option {
 	return func(opt *option) {
 		opt.coder = coder
+	}
+}
+
+// WithNotifier 一旦设置了该 handler，则跳过 proc 的回调
+func WithNotifier(ntf Notifier) Option {
+	return func(opt *option) {
+		opt.ntf = ntf
 	}
 }
 

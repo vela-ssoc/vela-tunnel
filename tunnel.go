@@ -56,7 +56,7 @@ type Tunneler interface {
 
 var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
 
-func Dial(parent context.Context, hide Hide, proc Processor, opts ...Option) (Tunneler, error) {
+func Dial(parent context.Context, hide Hide, handler http.Handler, opts ...Option) (Tunneler, error) {
 	if len(hide.Ethernet) == 0 && len(hide.Internet) == 0 {
 		return nil, ErrEmptyAddress
 	}
@@ -68,14 +68,17 @@ func Dial(parent context.Context, hide Hide, proc Processor, opts ...Option) (Tu
 	if opt.slog == nil {
 		opt.slog = new(stdLog)
 	}
-	if opt.proc == nil {
-		opt.proc = new(noopProc)
-	}
-	if opt.interval > 0 && (opt.interval < time.Minute || opt.interval > time.Hour) {
-		opt.interval = 7 * time.Minute
+	if handler == nil {
+		handler = http.NewServeMux()
 	}
 	if opt.coder == nil {
 		opt.coder = new(stdJSON)
+	}
+	if opt.ntf == nil {
+		opt.ntf = new(emptyNotify)
+	}
+	if opt.interval > 0 && (opt.interval < time.Minute || opt.interval > time.Hour) {
+		opt.interval = 7 * time.Minute
 	}
 
 	// 对地址预先处理
@@ -85,6 +88,7 @@ func Dial(parent context.Context, hide Hide, proc Processor, opts ...Option) (Tu
 	bt := &borerTunnel{
 		hide:   hide,
 		dialer: dial,
+		ntf:    opt.ntf,
 		slog:   opt.slog,
 		coder:  opt.coder,
 	}
@@ -104,7 +108,7 @@ func Dial(parent context.Context, hide Hide, proc Processor, opts ...Option) (Tu
 	}
 
 	// 开启监听
-	go bt.serve(opt.proc)
+	go bt.serve(handler)
 
 	return bt, nil
 }

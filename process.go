@@ -16,6 +16,15 @@ type Processor interface {
 
 	// ThirdRemove 三方文件删除时会回调该接口
 	ThirdRemove(ctx context.Context, id int64) error
+
+	// Disconnect 连接关闭时的回调事件
+	Disconnect(err error)
+
+	// Reconnected 重连成功
+	Reconnected()
+
+	// Shutdown 连接遇到不可重试的错误，通道关闭程序结束。
+	Shutdown(err error)
 }
 
 type TaskChunk struct {
@@ -55,4 +64,13 @@ func (noopProc) ThirdUpdate(ctx context.Context, id int64) error {
 
 func (noopProc) ThirdRemove(ctx context.Context, id int64) error {
 	return errors.New("non-implement third remove")
+}
+
+func (p noopProc) Disconnect(err error) {
+}
+
+func (p noopProc) Reconnected() {
+}
+
+func (p noopProc) Shutdown(err error) {
 }

@@ -25,6 +25,7 @@ type borerTunnel struct {
 	hide    Hide               // hide
 	ident   Ident              // ident
 	issue   Issue              // issue
+	ntf     Notifier           // 事件通知
 	dialer  dialer             // TCP 连接器
 	coder   Coder              // JSON 编解码器
 	brkAddr *Address           // 当前连接的 broker 节点地址
@@ -311,17 +312,14 @@ func (bt *borerTunnel) sleepN(du time.Duration) error {
 	return nil
 }
 
-func (bt *borerTunnel) serve(proc Processor) {
-	app := &webapp{code: bt.coder, proc: proc}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/edict/substance/event", app.substance)
-	mux.HandleFunc("/api/v1/edict/third/event", app.third)
-
+func (bt *borerTunnel) serve(handler http.Handler) {
 	ctx := bt.parent
+	ntf := bt.ntf
 	var err error
 	for {
 		lis := bt.muxer
-		ser := http.Serve(lis, mux) // 如果连接正常则会阻塞在此
+		ser := http.Serve(lis, handler) // 如果连接正常则会阻塞在此
+		ntf.Disconnect(ser)
 		if err = ctx.Err(); err != nil {
 			bt.slog.Warnf("连接已经断开不再重连：%s", err)
 			break
@@ -333,5 +331,9 @@ func (bt *borerTunnel) serve(proc Processor) {
 			break
 		}
 		bt.slog.Infof("重连成功")
+		addr := bt.brkAddr
+		ntf.Reconnected(addr) // 重连回调
 	}
+
+	ntf.Shutdown(err)
 }
