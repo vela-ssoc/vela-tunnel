@@ -185,65 +185,140 @@ paths:
         也就是说：当 `Agent` 该接口被触发时，代表中心端的三方文件有修改，`Agent` 需要执行三方文件逻辑。
   /substance/task:
     post:
-      summary: ''
+      summary: 上报配置运行状态返回差异信息
       operationId: post-substance-task
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDiff'
       tags:
         - Broker
       description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskReport'
+        description: ''
 components:
   schemas:
-    SubstanceDiff:
+    TaskDiff:
+      title: TaskDiff
+      x-stoplight:
+        id: ztigrtssizk6y
       type: object
+      description: 中心端比对后返回的差异信息
       properties:
         removes:
           type: array
           items:
-            type: string
+            type: integer
         updates:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              dialect:
-                type: boolean
-              hash:
-                type: string
-              chunk:
-                type: string
-      x-examples:
-        Example 1:
-          removes:
-            - '63372480515067905'
-            - '63646674339418112'
-          updates:
-            - id: '63653367643295744'
-              name: mysql-honeypot
-              dialect: true
-              hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
-              chunk: cHJpbnQoImhlbGxvIik=
-      description: |-
-        Go struct 定义：
-
-        ```go
-        type T struct {
-          Removes []int64 
-        }
-
-        ```
+            $ref: '#/components/schemas/TaskChunk'
       examples:
         - removes:
-            - 63372480515067900
-            - 63646674339418110
+            - 1234567890
           updates:
-            - id: 63653367643295740
-              name: mysql-honeypot
+            - id: 11223344556677
+              name: kafka
               dialect: true
-              hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
-              chunk: cHJpbnQoImhlbGxvIik=
+              hash: 28f35476af08ba7d170529ec46484b98
+              chunk: cHJpbnQoIkhlbGxvIik=
+    TaskChunk:
+      title: TaskChunk
+      x-stoplight:
+        id: ma43hfagscnvy
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        dialect:
+          type: boolean
+        hash:
+          type: string
+        chunk:
+          type: string
+      examples:
+        - id: 11223344556677
+          name: kafka
+          dialect: true
+          hash: 28f35476af08ba7d170529ec46484b98
+          chunk: cHJpbnQoIkhlbGxvIik=
+    TaskRunner:
+      title: TaskRunner
+      x-stoplight:
+        id: w11u8tn7n60xh
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+      examples:
+        - name: kafka.sub
+          type: kafka
+          status: running
+    TaskStatus:
+      title: TaskStatus
+      x-stoplight:
+        id: mv0o6vtb7qsqy
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        dialect:
+          type: boolean
+        hash:
+          type: string
+        uptime:
+          type: string
+        from:
+          type: string
+        runners:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskRunner'
+      examples:
+        - id: 1133847578322
+          name: kafka
+          dialect: true
+          hash: 28f35476af08ba7d170529ec46484b98
+          uptime: '2023-05-23T02:42:26.968Z'
+          from: tunnel
+          runners:
+            - name: kafka.sub
+              type: kafka
+              status: running
+    TaskReport:
+      title: TaskReport
+      x-stoplight:
+        id: dvqomtdddc6j7
+      type: object
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskStatus'
+      examples:
+        - tasks:
+            - id: 1133847578322
+              name: kafka
+              dialect: true
+              hash: 28f35476af08ba7d170529ec46484b98
+              uptime: '2023-05-23T02:42:26.968Z'
+              from: tunnel
+              runners:
+                - name: kafka.sub
+                  type: kafka
+                  status: running
