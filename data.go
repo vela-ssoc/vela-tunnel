@@ -32,6 +32,7 @@ type TaskStatus struct {
 	Hash    string        `json:"hash"`    // 配置哈希（目前是 MD5）
 	Uptime  time.Time     `json:"uptime"`  // 配置启动时间
 	From    string        `json:"from"`    // 配置来源
+	Cause   string        `json:"cause"`   // 错误信息
 	Runners []*TaskRunner `json:"runners"` // 任务内部模块运行状态
 }
 
