@@ -112,7 +112,8 @@ paths:
                             status: panic
       tags:
         - Agent
-      description: 当中心端的配置发生变更时，`Broker` 会调用该接口并推送差异信息。
+      description: |
+        当中心端的配置发生变更时，`Broker` 会调用该接口并推送差异信息。
       requestBody:
         content:
           application/json:
@@ -169,6 +170,7 @@ paths:
                       dialect: true
                       hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
                       chunk: cHJpbnQoImhlbGxvIik=
+        description: ''
   /edict/third/event:
     post:
       summary: 三方文件变更回调
@@ -181,5 +183,67 @@ paths:
       description: |-
         当中心端的三方文件发生变更时，`Broker` 会调用该接口。
         也就是说：当 `Agent` 该接口被触发时，代表中心端的三方文件有修改，`Agent` 需要执行三方文件逻辑。
+  /substance/task:
+    post:
+      summary: ''
+      operationId: post-substance-task
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+      description: ''
 components:
-  schemas: {}
+  schemas:
+    SubstanceDiff:
+      type: object
+      properties:
+        removes:
+          type: array
+          items:
+            type: string
+        updates:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              dialect:
+                type: boolean
+              hash:
+                type: string
+              chunk:
+                type: string
+      x-examples:
+        Example 1:
+          removes:
+            - '63372480515067905'
+            - '63646674339418112'
+          updates:
+            - id: '63653367643295744'
+              name: mysql-honeypot
+              dialect: true
+              hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
+              chunk: cHJpbnQoImhlbGxvIik=
+      description: |-
+        Go struct 定义：
+
+        ```go
+        type T struct {
+          Removes []int64 
+        }
+
+        ```
+      examples:
+        - removes:
+            - 63372480515067900
+            - 63646674339418110
+          updates:
+            - id: 63653367643295740
+              name: mysql-honeypot
+              dialect: true
+              hash: a5e636d1097ffc88e9ed41027511f1fbe3fe2efd
+              chunk: cHJpbnQoImhlbGxvIik=

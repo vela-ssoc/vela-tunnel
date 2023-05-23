@@ -1,5 +1,6 @@
 package tunnel
 
+// Notifier 通道 掉线/重连成功/关闭 事件通知器
 type Notifier interface {
 	// Disconnect 连接关闭时的回调事件
 	Disconnect(err error)
@@ -13,8 +14,8 @@ type Notifier interface {
 
 type emptyNotify struct{}
 
-func (e emptyNotify) Disconnect(err error) {}
+func (e emptyNotify) Disconnect(error) {}
 
-func (e emptyNotify) Reconnected(addr *Address) {}
+func (e emptyNotify) Reconnected(*Address) {}
 
-func (e emptyNotify) Shutdown(err error) {}
+func (e emptyNotify) Shutdown(error) {}

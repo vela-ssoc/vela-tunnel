@@ -54,11 +54,11 @@ type Tunneler interface {
 	Stream(ctx context.Context, path string, header http.Header) (*websocket.Conn, error)
 }
 
-var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
-
 type Server interface {
 	Serve(ln net.Listener) error
 }
+
+var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
 
 func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunneler, error) {
 	if len(hide.Ethernet) == 0 && len(hide.Internet) == 0 {
@@ -109,6 +109,9 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	}
 
 	// 开启监听
+	if srv == nil {
+		srv = &http.Server{}
+	}
 	go bt.serveHTTP(srv)
 
 	return bt, nil
