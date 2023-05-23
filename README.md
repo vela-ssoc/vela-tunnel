@@ -41,6 +41,11 @@ func main() {
 	server = fromStd()             // https://github.com/golang/go
 	
 	// tunnel.Dial 是阻塞式连接。如果连接失败，Dial 会一直重试直至成功或遇到不可重试的错误。
+	// 也就是说当 tunnel.Dial 方法返回时，如果 err != nil 代表着该 agent 没有必要继续启动了。
+	//
+	// 不可重试的错误目前只有以下几种种情况：
+	// 		1. 中心端将 agent 删除，agent 没有必要再运行了。
+	// 		2. 参数配置错误
 	tun, err := tunnel.Dial(ctx, hide, server)
 	
 }
