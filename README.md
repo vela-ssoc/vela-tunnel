@@ -23,12 +23,15 @@ import (
 
 func main() {
 	ctx := context.Background()
-	var hide tunnel.Hide
-
-	var server tunnel.Server
+	hide := tunnel.Hide{
+		Semver:   "0.0.1-example",
+		Ethernet: tunnel.Addresses{{Addr: "10.10.10.11:8080"}},
+		Internet: tunnel.Addresses{{TLS: true, Addr: "soc.example.com"}},
+	}
 
 	// 下面是常用的几种 HTTP 服务框架如何实现 tunnel.Server 接口的示例，
 	// 根据实际情况任选其一。
+	var server tunnel.Server
 	server = fromFastHTTP()        // https://github.com/valyala/fasthttp
 	server = fromFastHTTPRouter()  // https://github.com/fasthttp/router
 	server = fromFastHTTPRouting() // https://github.com/qiangxue/fasthttp-routing
@@ -36,8 +39,10 @@ func main() {
 	server = fromShip()            // https://github.com/xgfone/ship
 	server = fromGin()             // https://github.com/gin-gonic/gin
 	server = fromStd()             // https://github.com/golang/go
-
+	
+	// tunnel.Dial 是阻塞式连接。如果连接失败，Dial 会一直重试直至成功或遇到不可重试的错误。
 	tun, err := tunnel.Dial(ctx, hide, server)
+	
 }
 
 // https://github.com/valyala/fasthttp/
@@ -112,14 +117,15 @@ func fromGin() tunnel.Server {
 	return srv
 }
 
-// 标准库
+// 标准库：https://github.com/golang/go
 func fromStd() tunnel.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("Hello"))
 	})
-	return new(http.Server)
+	srv := &http.Server{Handler: mux}
+	return srv
 }
 
 ```
@@ -127,7 +133,10 @@ func fromStd() tunnel.Server {
 ## 自定义 json 编解码
 
 ```go
-// sonicJSON 以 bytedance/sonic 为例实现 Coder 接口
+// sonicJSON 以 [sonic] 为例自定义实现 JSON 编解码器，
+// 实现 tunnel.Coder 接口。
+//
+// [sonic]: https://github.com/bytedance/sonic
 type sonicJSON struct {
     api sonic.API
 }
@@ -136,6 +145,6 @@ func (s sonicJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { retu
 func (s sonicJSON) NewDecoder(r io.Reader) interface{ Decode(any) error } { return s.api.NewDecoder(r) }
 
 coder := &sonicJSON{api: sonic.ConfigStd}
-tun, err := tunnel.Dial(ctx, hide, proc, tunnel.WithCoder(coder))
+tun, err := tunnel.Dial(ctx, hide, srv, tunnel.WithCoder(coder))
 
 ```
