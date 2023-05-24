@@ -19,6 +19,14 @@ type Attachment struct {
 	rc       io.ReadCloser
 }
 
+func (att *Attachment) Read(p []byte) (int, error) {
+	return att.rc.Read(p)
+}
+
+func (att *Attachment) Close() error {
+	return att.rc.Close()
+}
+
 func (att *Attachment) Filename() string {
 	return att.filename
 }
