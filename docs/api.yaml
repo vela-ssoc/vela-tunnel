@@ -102,7 +102,7 @@ paths:
           description: OK
       tags:
         - Agent
-      description: '当文件发生修改时，中心端会通知 agent 哪个文件发生了修改。agent 收到通知时要先自行判断是否用到了该文件。如果没有用到可忽略该通知。如果用到了该文件，请中心端自行 [获取最新的三方文件](/operations/get-third) 。'
+      description: '当文件发生修改时，中心端会通知 agent 哪个文件发生了修改。agent 收到通知时要先自行判断是否用到了该文件。如果没有用到可忽略该通知。如果用到了该文件，请中心端自行 [获取最新的三方文件](/operations/get-broker-third) 。'
       requestBody:
         content:
           application/json:
@@ -118,24 +118,24 @@ paths:
               示例:
                 value:
                   name: ip2region.db
-  /third:
+  /broker/third:
     get:
-      summary: 获取三方文件
+      summary: 下载三方文件
       tags:
         - Broker
       responses:
         '200':
-          description: OK
+          description: 文件下载
           content:
             application/octet-stream:
               schema:
                 type: object
                 properties: {}
         '304':
-          description: 文件没有变化
+          description: 文件未发生变化
         '404':
-          description: Not Found
-      operationId: get-third
+          description: 文件不存在
+      operationId: get-broker-third
       description: |
         `name`：文件名必填
 
@@ -148,18 +148,6 @@ paths:
         - 当文件未找到时 HTTP 状态码返回 `404`，即 agent 调用 `tunnel.Attchment()` 会返回 `err`。
 
         - 当找到文件时，中心端会匹配 `hash`，请求的 `hash` 与中心端 `hash` 一致时，HTTP 状态码返回 `304`。当 `hash` 不一致时才会返回文件下载流及文件基本信息。
-      parameters:
-        - schema:
-            type: string
-          in: query
-          name: name
-          required: true
-          description: 文件名
-        - schema:
-            type: string
-          in: query
-          name: hash
-          description: 文件哈希（MD5）
 components:
   schemas:
     TaskDiff:
