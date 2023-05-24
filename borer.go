@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -109,9 +110,22 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, path string, req any) err
 }
 
 // Attachment 下载文件
-func (bt *borerTunnel) Attachment(ctx context.Context, path string) (netutil.Attachment, error) {
-	addr := bt.httpURL(path)
-	return bt.client.Attachment(ctx, http.MethodGet, addr, nil, nil)
+func (bt *borerTunnel) Attachment(ctx context.Context, path string) (*Attachment, error) {
+	res, err := bt.fetch(ctx, http.MethodGet, path, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	att := &Attachment{
+		code: res.StatusCode,
+		rc:   res.Body,
+	}
+	disposition := res.Header.Get("Content-Disposition")
+	if _, params, _ := mime.ParseMediaType(disposition); params != nil {
+		att.filename = params["filename"]
+		att.hash = params["hash"]
+	}
+
+	return att, nil
 }
 
 // Stream 建立双向流

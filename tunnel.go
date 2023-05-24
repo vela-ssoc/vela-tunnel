@@ -48,7 +48,7 @@ type Tunneler interface {
 	OnewayJSON(context.Context, string, any) error
 
 	// Attachment 文件附件下载
-	Attachment(context.Context, string) (netutil.Attachment, error)
+	Attachment(context.Context, string) (*Attachment, error)
 
 	// Stream 建立双向流
 	Stream(ctx context.Context, path string, header http.Header) (*websocket.Conn, error)
