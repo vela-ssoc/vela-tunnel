@@ -21,10 +21,10 @@ servers:
   - url: /api/v1
     description: 基础路径
 paths:
-  /edict/task/status:
+  /agent/task/diff:
     post:
-      summary: 抓取 agent 上任务运行状态
-      operationId: post-edict-task-status
+      summary: 配置变更回调
+      operationId: post-agent-task-diff
       responses:
         '200':
           description: OK
@@ -32,48 +32,134 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskReport'
+              examples:
+                示例:
+                  value:
+                    tasks:
+                      - id: 1133847578322
+                        name: kafka
+                        dialect: true
+                        hash: 28f35476af08ba7d170529ec46484b98
+                        uptime: '2023-05-23T02:42:26.968Z'
+                        from: tunnel
+                        runners:
+                          - name: kafka.sub
+                            type: kafka
+                            status: running
       tags:
         - Agent
-      description: 抓取 agent 上任务运行状态
-  /edict/task/diff:
-    post:
-      summary: 配置有差异时回调接口
-      operationId: post-edict-task-diff
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TaskReport'
-      tags:
-        - Agent
-      description: 配置有差异时回调接口
+      description: 当中心端配置变更时，会调用 agent 的该接口
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskDiff'
-  /substance/task:
+            examples:
+              示例:
+                value:
+                  removes:
+                    - 3415465343438593
+                  updates:
+                    - id: 45863228455684120
+                      name: kafka
+                      dialect: true
+                      hash: 28f35476af08ba7d170529ec46484b98
+                      chunk: cHJpbnQoIkhlbGxvIik=
+  /agent/task/status:
     post:
-      summary: 上报配置运行状态返回差异信息
-      operationId: post-substance-task
+      summary: 抓取 agent 上配置运行状态
+      operationId: post-agent-task-status
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TaskDiff'
+                $ref: '#/components/schemas/TaskReport'
+              examples:
+                示例:
+                  value:
+                    tasks:
+                      - id: 1133847578322
+                        name: kafka
+                        dialect: true
+                        hash: 28f35476af08ba7d170529ec46484b98
+                        uptime: '2023-05-23T02:42:26.968Z'
+                        from: tunnel
+                        runners:
+                          - name: kafka.sub
+                            type: kafka
+                            status: running
       tags:
-        - Broker
-      description: ''
+        - Agent
+      description: 抓取 agent 上配置运行状态
+  /agent/third/diff:
+    post:
+      summary: 三方文件变更回调
+      operationId: post-agent-third-diff
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: '当文件发生修改时，中心端会通知 agent 哪个文件发生了修改。agent 收到通知时要先自行判断是否用到了该文件。如果没有用到可忽略该通知。如果用到了该文件，请中心端自行 [获取最新的三方文件](/operations/get-third) 。'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TaskReport'
-        description: ''
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 发生变更的文件名
+              required:
+                - name
+            examples:
+              示例:
+                value:
+                  name: ip2region.db
+  /third:
+    get:
+      summary: 获取三方文件
+      tags:
+        - Broker
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: object
+                properties: {}
+        '304':
+          description: 文件没有变化
+        '404':
+          description: Not Found
+      operationId: get-third
+      description: |
+        `name`：文件名必填
+
+        `hash`：agent 节点计算的 md5 可选
+
+        文件下载逻辑：
+
+        agent 向中心端请求下载三方文件，`name` 为必填项， 中心端根据文件名查找文件。
+
+        - 当文件未找到时 HTTP 状态码返回 `404`，即 agent 调用 `tunnel.Attchment()` 会返回 `err`。
+
+        - 当找到文件时，中心端会匹配 `hash`，请求的 `hash` 与中心端 `hash` 一致时，HTTP 状态码返回 `304`。当 `hash` 不一致时才会返回文件下载流及文件基本信息。
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: name
+          required: true
+          description: 文件名
+        - schema:
+            type: string
+          in: query
+          name: hash
+          description: 文件哈希（MD5）
 components:
   schemas:
     TaskDiff:
@@ -93,9 +179,9 @@ components:
             $ref: '#/components/schemas/TaskChunk'
       examples:
         - removes:
-            - 1234567890
+            - 89655745887242450000
           updates:
-            - id: 11223344556677
+            - id: 789665585552788
               name: kafka
               dialect: true
               hash: 28f35476af08ba7d170529ec46484b98
@@ -117,7 +203,7 @@ components:
         chunk:
           type: string
       examples:
-        - id: 11223344556677
+        - id: 7895536473673485
           name: kafka
           dialect: true
           hash: 28f35476af08ba7d170529ec46484b98
