@@ -102,7 +102,14 @@ paths:
           description: OK
       tags:
         - Agent
-      description: '当文件发生修改时，中心端会通知 agent 哪个文件发生了修改。agent 收到通知时要先自行判断是否用到了该文件。如果没有用到可忽略该通知。如果用到了该文件，请中心端自行 [获取最新的三方文件](/operations/get-broker-third) 。'
+      description: |
+        `name`：代表哪个文件发生了变化，文件名唯一不会重复。
+        `event`：变化类型，`delete` 代表文件删除；`update` 代表文件更新。
+
+        当接受到文件变化通知时，agent 要自行判断是否用到了该文件，如果未用到该文件可忽略该通知。
+        如果用到了该文件，可删除
+
+        当文件发生修改时，中心端会通知 agent 哪个文件发生了修改。agent 收到通知时要先自行判断是否用到了该文件。如果没有用到可忽略该通知。如果用到了该文件，请中心端自行 [获取最新的三方文件](/operations/get-broker-third) 。
       requestBody:
         content:
           application/json:
@@ -112,8 +119,15 @@ paths:
                 name:
                   type: string
                   description: 发生变更的文件名
+                event:
+                  type: string
+                  description: 事件类型 delete update
+                  enum:
+                    - delete
+                    - update
               required:
                 - name
+                - event
             examples:
               示例:
                 value:
@@ -125,29 +139,44 @@ paths:
         - Broker
       responses:
         '200':
-          description: 文件下载
-          content:
-            application/octet-stream:
-              schema:
-                type: object
-                properties: {}
+          description: 文件流
         '304':
-          description: 文件未发生变化
+          description: 文件未改变
         '404':
           description: 文件不存在
       operationId: get-broker-third
-      description: |
-        `name`：文件名必填
+      description: 下载三方文件
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: name
+          required: true
+          description: 三方文件名字
+        - schema:
+            type: string
+          in: query
+          name: hash
+          description: 文件 MD5
+  /broker/stream/tunnel:
+    get:
+      summary: TCP 代理通道
+      tags:
+        - Broker
+      responses: {}
+      operationId: get-broker-stream-tunnel
+      description: |-
+        TCP over websocket 流式代理通道。
 
-        `hash`：agent 节点计算的 md5 可选
-
-        文件下载逻辑：
-
-        agent 向中心端请求下载三方文件，`name` 为必填项， 中心端根据文件名查找文件。
-
-        - 当文件未找到时 HTTP 状态码返回 `404`，即 agent 调用 `tunnel.Attchment()` 会返回 `err`。
-
-        - 当找到文件时，中心端会匹配 `hash`，请求的 `hash` 与中心端 `hash` 一致时，HTTP 状态码返回 `304`。当 `hash` 不一致时才会返回文件下载流及文件基本信息。
+        `address` 必须包含地址及端口号，例如：1.1.1.1:8989 example.com:80
+      parameters:
+        - schema:
+            type: string
+            example: '172.31.61.168:9090'
+          in: query
+          name: address
+          required: true
+          description: 地址
 components:
   schemas:
     TaskDiff:
