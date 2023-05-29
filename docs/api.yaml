@@ -165,10 +165,19 @@ paths:
         - Broker
       responses: {}
       operationId: get-broker-stream-tunnel
-      description: |-
+      description: |
         TCP over websocket 流式代理通道。
 
-        `address` 必须包含地址及端口号，例如：1.1.1.1:8989 example.com:80
+        `address` 必须包含地址及端口号，例如：
+        - 1.1.1.1:8989
+        - example.com:80
+
+
+        ### 示例代码
+
+        ```go
+        stm, err := tun.Stream(ctx, "/api/v1/broker/stream/tunnel?address=example.com:443", nil)
+        ```
       parameters:
         - schema:
             type: string
