@@ -145,7 +145,14 @@ paths:
         '404':
           description: 文件不存在
       operationId: get-broker-third
-      description: 下载三方文件
+      description: |
+        下载三方文件
+
+        ### 调用示例
+
+        ```go
+        tun.Attachment(ctx, "/api/v1/broker/third?name=hello.db&hash=8d1aefb3da150aef7151f061772a88de")
+        ```
       parameters:
         - schema:
             type: string
@@ -173,7 +180,7 @@ paths:
         - example.com:80
 
 
-        ### 示例代码
+        ### 调用
 
         ```go
         stm, err := tun.Stream(ctx, "/api/v1/broker/stream/tunnel?address=example.com:443", nil)
