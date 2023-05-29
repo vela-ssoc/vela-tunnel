@@ -18,6 +18,4 @@
 
 *.json
 
-example/
-
 docs/.stoplight
