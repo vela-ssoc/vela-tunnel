@@ -4,7 +4,10 @@ x-stoplight:
 info:
   title: Agent 与 Broker 节点对接文档
   version: '1.0'
-  description: Agent 与 Broker 节点对接文档
+  description: |-
+    ## 安全管理平台节点接口对接文档
+
+    Agent 与 Broker 节点对接文档
   contact:
     name: ssoc
     url: 'https://github.com/vela-ssoc'
@@ -132,6 +135,7 @@ paths:
               示例:
                 value:
                   name: ip2region.db
+                  event: update
   /broker/third:
     get:
       summary: 下载三方文件
@@ -139,7 +143,12 @@ paths:
         - Broker
       responses:
         '200':
-          description: 文件流
+          description: Body 就是文件流
+          content:
+            application/octet-stream:
+              schema:
+                type: object
+                properties: {}
         '304':
           description: 文件未改变
         '404':
@@ -170,7 +179,11 @@ paths:
       summary: TCP 代理通道
       tags:
         - Broker
-      responses: {}
+      responses:
+        '101':
+          description: 底层基于 websocket，所以接入成功返回的状态码是 `101`。
+        '400':
+          description: 包含错误原因
       operationId: get-broker-stream-tunnel
       description: |
         TCP over websocket 流式代理通道。
@@ -193,6 +206,23 @@ paths:
           name: address
           required: true
           description: 地址
+  /broker/stream/elastic:
+    get:
+      summary: ES 代理通道
+      tags:
+        - Broker
+      responses:
+        '101':
+          description: 底层基于 websocket，所以接入成功返回的状态码是 `101`。
+      operationId: get-broker-stream-elastic
+      description: |
+        ES 流式代理通道。目前仅只支持 [bulk](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html) 操作。agent 要遵循 elastic bulk 的报文规则。
+
+        ### 调用
+
+        ```go
+        stm, err := tun.Stream(ctx, "/api/v1/broker/stream/elastic", nil)
+        ```
 components:
   schemas:
     TaskDiff:
