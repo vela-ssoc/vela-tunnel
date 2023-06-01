@@ -322,6 +322,31 @@ paths:
       tags:
         - Broker
       description: "Agent 可以通过该接口新增或删除 `tag`。\n\n- 新增：只可以新增不存在的 `tag`。\n\n- 删除：只可以删除 Agent 新增的 `tag`，web 界面添加的标签不可被 Agent 删除。\n\nJSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tAdd []string `json:\"add\" validate:\"lte=50,unique,dive,tag\"`\n\tDel []string `json:\"del\" validate:\"lte=50,unique,dive,tag\"`\n}\n```"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                add:
+                  type: array
+                  items:
+                    type: string
+                del:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - add
+                - del
+            examples:
+              示例:
+                value:
+                  add:
+                    - centos7
+                    - devops
+                  del:
+                    - guba
 components:
   schemas:
     TaskDiff:
