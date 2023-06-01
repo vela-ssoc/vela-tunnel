@@ -20,6 +20,10 @@ tags:
     description: Agent 需要提供的接口
   - name: Broker
     description: Broker 需要提供的接口
+  - name: Stream
+    description: 流式传输
+  - name: Collect
+    description: Agent 节点信息收集上报
 servers:
   - url: /api/v1
     description: 基础路径
@@ -179,6 +183,7 @@ paths:
       summary: TCP 代理通道
       tags:
         - Broker
+        - Stream
       responses:
         '101':
           description: 底层基于 websocket，所以接入成功返回的状态码是 `101`。
@@ -211,6 +216,7 @@ paths:
       summary: ES 代理通道
       tags:
         - Broker
+        - Stream
       responses:
         '101':
           description: 底层基于 websocket，所以接入成功返回的状态码是 `101`。
@@ -223,6 +229,99 @@ paths:
         ```go
         stm, err := tun.Stream(ctx, "/api/v1/broker/stream/elastic", nil)
         ```
+  /broker/collect/agent/sysinfo:
+    post:
+      summary: Agent 上报系统信息
+      operationId: post-broker-collect-agent-sysinfo
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+        - Collect
+      description: "报文 JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tHostID      string `json:\"host_id\"`\n\tHostname    string `json:\"hostname\"`\n\tRelease     string `json:\"release\"`\n\tFamily      string `json:\"family\"`\n\tUptime      int64  `json:\"uptime\"`\n\tBootAt      int64  `json:\"boot_at\"`\n\tVirtual     string `json:\"virtual\"`\n\tVirtualRole string `json:\"virtual_role\"`\n\tProcNumber  int    `json:\"proc_number\"`\n\tMemTotal    int    `json:\"mem_total\"`\n\tMemFree     int    `json:\"mem_free\"`\n\tSwapTotal   int    `json:\"swap_total\"`\n\tSwapFree    int    `json:\"swap_free\"`\n\tCPUCore     int    `json:\"cpu_core\"`\n\tCPUModel    string `json:\"cpu_model\"`\n\tAgentTotal  int    `json:\"agent_total\"`\n\tAgentAlloc  int    `json:\"agent_alloc\"`\n\tVersion     string `json:\"version\"`\n}\n```"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+  /broker/collect/agent/process:
+    post:
+      summary: Agent 上报进程信息
+      operationId: post-broker-collect-agent-process
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+        - Collect
+      description: "报文 JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*process `json:\"creates\"` // 新增的进程\n\tUpdates []*process `json:\"updates\"` // 更新的进程\n\tDeletes []int      `json:\"deletes\"` // 删除的 PID\n}\n\ntype process struct {\n\tName         string    `json:\"name\"`\n\tState        string    `json:\"state\"`\n\tPid          int       `json:\"pid\"`\n\tPpid         int       `json:\"ppid\"`\n\tPgid         uint32    `json:\"pgid\"`\n\tCmdline      string    `json:\"cmdline\"`\n\tUsername     string    `json:\"username\"`\n\tCwd          string    `json:\"cwd\"`\n\tExecutable   string    `json:\"executable\"` // linux\n\tArgs         []string  `json:\"args\"`\n\tUserTicks    uint64    `json:\"user_ticks\"`\n\tTotalPct     float64   `json:\"total_pct\"`\n\tTotalNormPct float64   `json:\"total_norm_pct\"`\n\tSystemTicks  uint64    `json:\"system_ticks\"`\n\tTotalTicks   uint64    `json:\"total_ticks\"`\n\tStartTime    string    `json:\"start_time\"`\n\tMemSize      uint64    `json:\"mem_size\"`\n\tRssBytes     uint64    `json:\"rss_bytes\"`\n\tRssPct       float64   `json:\"rss_pct\"`\n\tShare        uint64    `json:\"share\"`\n\tChecksum     string    `json:\"checksum\"`\n\tModifyTime   time.Time `json:\"modify_time\"`\n\tCreateTime   time.Time `json:\"create_time\"`\n}\n```"
+  /broker/collect/agent/logon:
+    post:
+      summary: Agent 上报登录信息
+      operationId: post-broker-collect-agent-logon
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+        - Collect
+      description: "报文 JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tUser    string    `json:\"user\"  validate:\"required,lte=255\"`\n\tAddr    string    `json:\"addr\"  validate:\"omitempty,lte=100\"`\n\tClass   string    `json:\"class\" validate:\"omitempty,lte=255\"`\n\tTime    time.Time `json:\"time\"`\n\tType    string    `json:\"type\"`\n\tPID     int       `json:\"pid\"`\n\tDevice  string    `json:\"device\"`\n\tProcess string    `json:\"process\"`\n}\n```"
+  /broker/collect/agent/listen:
+    post:
+      summary: Agent 上报端口监听信息
+      operationId: post-broker-collect-agent-listen
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+        - Collect
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*listen `json:\"creates\"` // 新增的 Listen\n\tUpdates []*listen `json:\"updates\"` // 更新的 Listen\n\tDeletes []string  `json:\"deletes\"` // 删除的 Listen RecordID\n}\n\ntype listen struct {\n\tRecordID  string `json:\"record_id\"`\n\tPID       uint32 `json:\"pid\"`\n\tFD        int    `json:\"fd\"`\n\tFamily    uint8  `json:\"family\"`\n\tProtocol  uint8  `json:\"protocol\"`\n\tLocalIP   string `json:\"local_ip\"`\n\tLocalPort int    `json:\"local_port\"`\n\tPath      string `json:\"path\"`\n\tState     string `json:\"state\"`\n\tProcess   string `json:\"process\"`\n\tUsername  string `json:\"username\"`\n}\n```"
+  /broker/collect/agent/account:
+    post:
+      summary: Agent 上报账户信息
+      operationId: post-broker-collect-agent-account
+      responses:
+        '200':
+          description: OK
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*account `json:\"creates\"` // 新增的账户\n\tUpdates []*account `json:\"updates\"` // 更新的账户\n\tDeletes []string   `json:\"deletes\"` // 删除的账户名\n}\n\ntype account struct {\n\tName        string `json:\"name\"        gorm:\"column:name\"`\n\tLoginName   string `json:\"login_name\"  gorm:\"column:login_name\"`\n\tUID         string `json:\"uid\"         gorm:\"column:uid\"`\n\tGID         string `json:\"gid\"         gorm:\"column:gid\"`\n\tHomeDir     string `json:\"home_dir\"    gorm:\"column:home_dir\"`\n\tDescription string `json:\"description\" gorm:\"column:description\"`\n\tStatus      string `json:\"status\"      gorm:\"column:status\"`\n\tRaw         string `json:\"raw\"         gorm:\"column:raw\"`\n}\n```"
+      tags:
+        - Broker
+        - Collect
+  /broker/collect/agent/group:
+    post:
+      summary: Agent 上报用户组信息
+      operationId: post-broker-collect-agent-group
+      responses:
+        '200':
+          description: OK
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*group `json:\"creates\"` // 新增的账户\n\tUpdates []*group `json:\"updates\"` // 更新的账户\n\tDeletes []string `json:\"deletes\"` // 删除的账户名\n}\n\ntype group struct {\n\tName        string `json:\"name\"`\n\tGID         string `json:\"gid\"`\n\tDescription string `json:\"description\"`\n}\n```"
+      tags:
+        - Broker
+        - Collect
+  /broker/collect/agent/sbom:
+    post:
+      summary: Agent 上报软件供应链信息
+      operationId: post-broker-collect-agent-sbom
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+        - Collect
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tFilename  string    `json:\"filename\"    validate:\"required\"`\n\tAlgorithm string    `json:\"algorithm\"`\n\tChecksum  string    `json:\"checksum\"    validate:\"required\"`\n\tModifyAt  time.Time `json:\"modify_time\"`\n\tSize      int64     `json:\"size\"`\n\tProcess   procExt   `json:\"process\"`\n\tSDKs      []*sdk    `json:\"packages\"    validate:\"dive\"`\n}\n\ntype sdk struct {\n\tPurl      string   `json:\"purl\"`\n\tName      string   `json:\"name\"`\n\tVersion   string   `json:\"version\"`\n\tLanguage  string   `json:\"language\"`\n\tAlgorithm string   `json:\"algorithm\"`\n\tChecksum  string   `json:\"checksum\"`\n\tLicenses  []string `json:\"licenses\"`\n}\n\ntype procExt struct {\n\tPID      int    `json:\"pid\"`\n\tExe      string `json:\"exe\"`\n\tUsername string `json:\"username\"`\n}\n```"
+  /broker/operate/tag:
+    post:
+      summary: Agent 修改自身标签
+      operationId: post-broker-operate-tag
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+      description: "Agent 可以通过该接口新增或删除 `tag`。\n\n- 新增：只可以新增不存在的 `tag`。\n\n- 删除：只可以删除 Agent 新增的 `tag`，web 界面添加的标签不可被 Agent 删除。\n\nJSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tAdd []string `json:\"add\" validate:\"lte=50,unique,dive,tag\"`\n\tDel []string `json:\"del\" validate:\"lte=50,unique,dive,tag\"`\n}\n```"
 components:
   schemas:
     TaskDiff:
