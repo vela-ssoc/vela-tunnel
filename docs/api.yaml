@@ -286,7 +286,7 @@ paths:
       responses:
         '200':
           description: OK
-      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*account `json:\"creates\"` // 新增的账户\n\tUpdates []*account `json:\"updates\"` // 更新的账户\n\tDeletes []string   `json:\"deletes\"` // 删除的账户名\n}\n\ntype account struct {\n\tName        string `json:\"name\"        gorm:\"column:name\"`\n\tLoginName   string `json:\"login_name\"  gorm:\"column:login_name\"`\n\tUID         string `json:\"uid\"         gorm:\"column:uid\"`\n\tGID         string `json:\"gid\"         gorm:\"column:gid\"`\n\tHomeDir     string `json:\"home_dir\"    gorm:\"column:home_dir\"`\n\tDescription string `json:\"description\" gorm:\"column:description\"`\n\tStatus      string `json:\"status\"      gorm:\"column:status\"`\n\tRaw         string `json:\"raw\"         gorm:\"column:raw\"`\n}\n```"
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tCreates []*account `json:\"creates\"` // 新增的账户\n\tUpdates []*account `json:\"updates\"` // 更新的账户\n\tDeletes []string   `json:\"deletes\"` // 删除的账户名\n}\n\ntype account struct {\n\tName        string `json:\"name\"`\n\tLoginName   string `json:\"login_name\"`\n\tUID         string `json:\"uid\"`\n\tGID         string `json:\"gid\"`\n\tHomeDir     string `json:\"home_dir\"`\n\tDescription string `json:\"description\"`\n\tStatus      string `json:\"status\"`\n\tRaw         string `json:\"raw\"`\n}\n```"
       tags:
         - Broker
         - Collect
@@ -311,7 +311,7 @@ paths:
       tags:
         - Broker
         - Collect
-      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tFilename  string    `json:\"filename\"    validate:\"required\"`\n\tAlgorithm string    `json:\"algorithm\"`\n\tChecksum  string    `json:\"checksum\"    validate:\"required\"`\n\tModifyAt  time.Time `json:\"modify_time\"`\n\tSize      int64     `json:\"size\"`\n\tProcess   procExt   `json:\"process\"`\n\tSDKs      []*sdk    `json:\"packages\"    validate:\"dive\"`\n}\n\ntype sdk struct {\n\tPurl      string   `json:\"purl\"`\n\tName      string   `json:\"name\"`\n\tVersion   string   `json:\"version\"`\n\tLanguage  string   `json:\"language\"`\n\tAlgorithm string   `json:\"algorithm\"`\n\tChecksum  string   `json:\"checksum\"`\n\tLicenses  []string `json:\"licenses\"`\n}\n\ntype procExt struct {\n\tPID      int    `json:\"pid\"`\n\tExe      string `json:\"exe\"`\n\tUsername string `json:\"username\"`\n}\n```"
+      description: "JSON 格式如 struct 所示：\n\n```go\ntype Request struct {\n\tFilename  string    `json:\"filename\"`\n\tAlgorithm string    `json:\"algorithm\"`\n\tChecksum  string    `json:\"checksum\"`\n\tModifyAt  time.Time `json:\"modify_time\"`\n\tSize      int64     `json:\"size\"`\n\tProcess   procExt   `json:\"process\"`\n\tSDKs      []*sdk    `json:\"packages\"`\n}\n\ntype sdk struct {\n\tPurl      string   `json:\"purl\"`\n\tName      string   `json:\"name\"`\n\tVersion   string   `json:\"version\"`\n\tLanguage  string   `json:\"language\"`\n\tAlgorithm string   `json:\"algorithm\"`\n\tChecksum  string   `json:\"checksum\"`\n\tLicenses  []string `json:\"licenses\"`\n}\n\ntype procExt struct {\n\tPID      int    `json:\"pid\"`\n\tExe      string `json:\"exe\"`\n\tUsername string `json:\"username\"`\n}\n```"
   /broker/operate/tag:
     post:
       summary: Agent 修改自身标签
@@ -347,6 +347,26 @@ paths:
                     - devops
                   del:
                     - guba
+  /broker/audit/event:
+    post:
+      summary: Event 事件上报
+      operationId: post-broker-audit-event
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+      description: "```go\ntype Request struct {\n\tSubject    string    `json:\"subject\"`     // 主题\n\tRemoteAddr string    `json:\"remote_addr\"` // 远程地址\n\tRemotePort int       `json:\"remote_port\"` // 远程端口\n\tFromCode   string    `json:\"from_code\"`   // 来源模块\n\tTypeof     string    `json:\"typeof\"`      // 模块类型\n\tUser       string    `json:\"user\"`        // 用户信息\n\tAuth       string    `json:\"auth\"`        // 认证信息\n\tMsg        string    `json:\"msg\"`         // 上报消息\n\tError      string    `json:\"error\"`       // 错误信息\n\tRegion     string    `json:\"region\"`      // IP 定位\n\tLevel      string    `json:\"level\"`       // 告警级别 紧急 重要 次要 普通\n\tSendAlert  bool      `json:\"send_alert\"`  // 是否需要发送告警\n\tOccurAt    time.Time `json:\"occur_at\"`    // 事件发生的时间\n\tCreatedAt  time.Time `json:\"created_at\"`  // 创建时间\n}\n```"
+  /broker/audit/risk:
+    post:
+      summary: Risk 风险事件上报
+      operationId: post-broker-audit-risk
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+      description: "```go\ntype Request struct {\n\t// Class 风险类型\n\t// [\"暴力破解\", \"病毒事件\", \"弱口令\", \"数据爬虫\", \"蜜罐应用\", \"web 攻击\", \"监控事件\", \"登录事件\"]\n\tClass      string    `json:\"class\"`\n\tInet       string    `json:\"inet\"`        // 节点 IPv4\n\tLevel      string    `json:\"level\"`       // 风险级别 紧急 高危 中危 低危\n\tPayload    string    `json:\"payload\"`     // 攻击载荷\n\tSubject    string    `json:\"subject\"`     // 风险事件主题\n\tLocalIP    string    `json:\"local_ip\"`    // 本地 IP\n\tLocalPort  int       `json:\"local_port\"`  // 本地端口\n\tRemoteIP   string    `json:\"remote_ip\"`   // 远程 IP\n\tRemotePort int       `json:\"remote_port\"` // 远程端口\n\tFromCode   string    `json:\"from_code\"`   // 来源模块\n\tRegion     string    `json:\"region\"`      // IP 归属地\n\tReference  string    `json:\"reference\"`   // 参考引用\n\tAlert      bool      `json:\"alert\"`       // 是否需要发送告警\n\tTime       time.Time `json:\"time\"`        // 风险产生的时间\n}\n```"
 components:
   schemas:
     TaskDiff:

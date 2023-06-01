@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/vela-ssoc/vela-tunnel"
 )
@@ -22,7 +23,7 @@ func main() {
 	}
 
 	srv := NewServer()
-	tun, err := tunnel.Dial(ctx, hide, srv, tunnel.WithNotifier(ntf))
+	tun, err := tunnel.Dial(ctx, hide, srv, tunnel.WithNotifier(ntf), tunnel.WithInterval(time.Minute))
 	if err != nil {
 		log.Printf("tunnel 连接失败，结束运行：%v", err)
 		return
