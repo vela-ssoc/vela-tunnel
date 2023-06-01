@@ -76,6 +76,8 @@ func (att *Attachment) File(path string) (string, error) {
 }
 
 // Unzip 将文件解压到指定路径
+//
+// Deprecated: 该方法还未完善，应该存在一些问题请勿使用。
 func (att *Attachment) Unzip(path string) error {
 	if !att.ZipFile() {
 		return zip.ErrFormat
