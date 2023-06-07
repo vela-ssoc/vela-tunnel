@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/url"
 
 	"github.com/vela-ssoc/vela-common-mba/netutil"
 	"github.com/vela-ssoc/vela-tunnel"
@@ -15,7 +16,7 @@ func ProxyTCP(local string, tun tunnel.Tunneler) error {
 }
 
 type tcpOverWebsocket struct {
-	local string
+	local string // 监听本地 0.0.0.0:8066
 	tun   tunnel.Tunneler
 }
 
@@ -39,12 +40,13 @@ func (tow *tcpOverWebsocket) serve(conn net.Conn) {
 	//goland:noinspection GoUnhandledErrorResult
 	defer conn.Close()
 
-	path := "/api/v1/broker/stream/tunnel?address=baidu.com:443"
+	query := url.Values{"address": []string{"tcp://61.129.129.241:22"}}
+	path := "/api/v1/broker/stream/tunnel?" + query.Encode()
 	stm, err := tow.tun.Stream(context.Background(), path, nil)
 	if err != nil {
 		log.Printf("stream 建立失败：%s", err)
 		return
 	}
 
-	netutil.ConnSockPIPE(conn, stm)
+	netutil.Pipe(conn, stm)
 }

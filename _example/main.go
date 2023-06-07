@@ -33,7 +33,7 @@ func main() {
 	log.Printf("agent %s 连接成功！！！\nident：\n%s\nissue：\n%s\n", name, ident, issue)
 
 	go func() {
-		if exx := ProxyTCP("0.0.0.0:12399", tun); err != nil {
+		if exx := ProxyTCP("0.0.0.0:8066", tun); err != nil {
 			log.Printf("TCP over websocket 代理出错：%s", exx)
 		}
 	}()
