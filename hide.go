@@ -1,8 +1,14 @@
 package tunnel
 
 import (
+	"encoding/json"
 	"net"
+	"net/url"
+	"os"
 	"strings"
+	"time"
+
+	"github.com/vela-ssoc/vela-common-mba/encipher"
 )
 
 // Hide 是 minion 节点的配置文件，正式发布时都会被隐写在二进制执行文件中，
@@ -20,6 +26,11 @@ type Hide struct {
 
 	// Internet 外网连接地址
 	Internet Addresses `json:"internet"`
+}
+
+func (h Hide) String() string {
+	raw, _ := json.MarshalIndent(h, "", "  ")
+	return string(raw)
 }
 
 // Address broker 的服务地址
@@ -95,5 +106,64 @@ func (ads Addresses) Preformat() {
 		} else {
 			ad.Addr = addr + ":80"
 		}
+	}
+}
+
+// RawHide 由中心端或代理节点隐写在二进制文件中
+type RawHide struct {
+	Servername string    `json:"servername"`
+	LAN        []string  `json:"lan"`
+	VIP        []string  `json:"vip"`
+	Edition    string    `json:"edition"`
+	Hash       string    `json:"hash"`
+	Size       int64     `json:"size"`
+	DownloadAt time.Time `json:"download_at"`
+}
+
+func (r RawHide) String() string {
+	raw, _ := json.MarshalIndent(r, "", "  ")
+	return string(raw)
+}
+
+func ReadHide(names ...string) (RawHide, Hide, error) {
+	name := os.Args[0]
+	if len(names) != 0 && names[0] != "" {
+		name = names[0]
+	}
+
+	var raw RawHide
+	var hide Hide
+	if err := encipher.ReadFile(name, &raw); err != nil {
+		return raw, hide, err
+	}
+
+	// 将老的转为新的
+	hide.Semver = raw.Edition
+	for _, s := range raw.LAN {
+		addr := parseURL(s)
+		hide.Ethernet = append(hide.Ethernet, addr)
+	}
+	for _, s := range raw.VIP {
+		addr := parseURL(s)
+		hide.Internet = append(hide.Internet, addr)
+	}
+
+	return raw, hide, nil
+}
+
+func parseURL(rawURL string) *Address {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return &Address{Addr: rawURL}
+	}
+	sn, _, _ := net.SplitHostPort(u.Host)
+	if sn == "" {
+		sn = u.Host
+	}
+
+	return &Address{
+		TLS:  u.Scheme == "wss",
+		Addr: u.Host,
+		Name: sn,
 	}
 }
