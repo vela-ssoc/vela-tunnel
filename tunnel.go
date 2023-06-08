@@ -79,7 +79,7 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 		opt.ntf = new(emptyNotify)
 	}
 	if opt.interval > 0 && (opt.interval < time.Minute || opt.interval > time.Hour) {
-		opt.interval = 7 * time.Minute
+		opt.interval = 3 * time.Minute
 	}
 
 	// 对地址预先处理
@@ -87,11 +87,12 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	hide.Internet.Preformat()
 	dial := newDialer(hide.Ethernet, hide.Internet)
 	bt := &borerTunnel{
-		hide:   hide,
-		dialer: dial,
-		ntf:    opt.ntf,
-		slog:   opt.slog,
-		coder:  opt.coder,
+		hide:     hide,
+		dialer:   dial,
+		ntf:      opt.ntf,
+		slog:     opt.slog,
+		coder:    opt.coder,
+		interval: opt.interval,
 	}
 
 	bt.stream = netutil.NewStream(bt.dialContext)        // 创建 stream 连接器

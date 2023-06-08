@@ -24,7 +24,9 @@ func WithLogger(slog Logger) Option {
 	}
 }
 
-// WithInterval 设置心跳包间隔，如果不设置或该时间小于等于 0 则代表不发送心跳包
+// WithInterval 设置心跳包间隔，如果不设置或该时间小于等于 0 则代表不发送心跳包。
+// 心跳只是一种异常断开的兜底机制，由于线上节点较多，没有必要设置的太短，
+// 否则会引起大面积的心跳风暴。
 func WithInterval(interval time.Duration) Option {
 	return func(opt *option) {
 		opt.interval = interval

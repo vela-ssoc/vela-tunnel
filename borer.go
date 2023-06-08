@@ -23,20 +23,21 @@ import (
 
 // borerTunnel 通道连接器
 type borerTunnel struct {
-	hide    Hide               // hide
-	ident   Ident              // ident
-	issue   Issue              // issue
-	ntf     Notifier           // 事件通知
-	dialer  dialer             // TCP 连接器
-	coder   Coder              // JSON 编解码器
-	brkAddr *Address           // 当前连接的 broker 节点地址
-	muxer   spdy.Muxer         // 底层流复用
-	client  netutil.HTTPClient // http 客户端
-	stream  netutil.Streamer   // 建立流式通道用
-	slog    Logger             // 日志输出组件
-	parent  context.Context    // parent context.Context
-	ctx     context.Context    // context.Context
-	cancel  context.CancelFunc // context.CancelFunc
+	hide     Hide               // hide
+	ident    Ident              // ident
+	issue    Issue              // issue
+	ntf      Notifier           // 事件通知
+	interval time.Duration      // 心跳间隔
+	dialer   dialer             // TCP 连接器
+	coder    Coder              // JSON 编解码器
+	brkAddr  *Address           // 当前连接的 broker 节点地址
+	muxer    spdy.Muxer         // 底层流复用
+	client   netutil.HTTPClient // http 客户端
+	stream   netutil.Streamer   // 建立流式通道用
+	slog     Logger             // 日志输出组件
+	parent   context.Context    // parent context.Context
+	ctx      context.Context    // context.Context
+	cancel   context.CancelFunc // context.CancelFunc
 }
 
 // ID 节点 ID
@@ -177,17 +178,24 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 	ticker := time.NewTicker(inter)
 	defer ticker.Stop()
 
-	const endpoint = "/api/v1/minion/ping"
 over:
 	for {
 		select {
 		case <-bt.parent.Done():
 			break over
 		case <-ticker.C:
-			if err := bt.Oneway(nil, endpoint, nil, nil); err != nil {
-				bt.slog.Infof("心跳包发送出错：%v", err)
-			}
+			bt.heartbeatSend(5 * time.Second)
 		}
+	}
+}
+
+func (bt *borerTunnel) heartbeatSend(timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(bt.parent, timeout)
+	defer cancel()
+	const endpoint = "/api/v1/minion/ping"
+
+	if err := bt.Oneway(ctx, endpoint, nil, nil); err != nil {
+		bt.slog.Warnf("心跳包发送失败：%s", err)
 	}
 }
 
@@ -235,14 +243,15 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	mac := bt.dialer.lookupMAC(ip)
 
 	ident := Ident{
-		Semver: bt.hide.Semver,
-		Inet:   ip,
-		MAC:    mac.String(),
-		Goos:   runtime.GOOS,
-		Arch:   runtime.GOARCH,
-		CPU:    runtime.NumCPU(),
-		PID:    os.Getpid(),
-		TimeAt: time.Now(),
+		Semver:   bt.hide.Semver,
+		Inet:     ip,
+		MAC:      mac.String(),
+		Goos:     runtime.GOOS,
+		Arch:     runtime.GOARCH,
+		CPU:      runtime.NumCPU(),
+		PID:      os.Getpid(),
+		Interval: bt.interval,
+		TimeAt:   time.Now(),
 	}
 	ident.Hostname, _ = os.Hostname()
 	ident.Workdir, _ = os.Getwd()
