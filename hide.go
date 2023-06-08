@@ -2,13 +2,12 @@ package tunnel
 
 import (
 	"encoding/json"
+	"github.com/vela-ssoc/vela-common-mba/encipher"
+	"github.com/vela-ssoc/vela-common-mba/steganography"
 	"net"
 	"net/url"
 	"os"
 	"strings"
-	"time"
-
-	"github.com/vela-ssoc/vela-common-mba/encipher"
 )
 
 // Hide 是 minion 节点的配置文件，正式发布时都会被隐写在二进制执行文件中，
@@ -109,21 +108,7 @@ func (ads Addresses) Preformat() {
 	}
 }
 
-// RawHide 由中心端或代理节点隐写在二进制文件中
-type RawHide struct {
-	Servername string    `json:"servername"`
-	LAN        []string  `json:"lan"`
-	VIP        []string  `json:"vip"`
-	Edition    string    `json:"edition"`
-	Hash       string    `json:"hash"`
-	Size       int64     `json:"size"`
-	DownloadAt time.Time `json:"download_at"`
-}
-
-func (r RawHide) String() string {
-	raw, _ := json.MarshalIndent(r, "", "  ")
-	return string(raw)
-}
+type RawHide steganography.MinionHide
 
 func ReadHide(names ...string) (RawHide, Hide, error) {
 	name := os.Args[0]
