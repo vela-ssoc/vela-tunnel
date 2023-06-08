@@ -23,10 +23,18 @@ import (
 
 func main() {
 	ctx := context.Background()
-	hide := tunnel.Hide{
-		Semver:   "0.0.1-example",
-		Ethernet: tunnel.Addresses{{Addr: "10.10.10.11:8080"}},
-		Internet: tunnel.Addresses{{TLS: true, Addr: "soc.example.com"}},
+	// 测试环境自己手动输入参数
+	{
+		hide := tunnel.Hide{
+			Semver:   "0.0.1-example",
+			Ethernet: tunnel.Addresses{{Addr: "10.10.10.11:8080"}},
+			Internet: tunnel.Addresses{{TLS: true, Addr: "soc.example.com"}},
+		}
+	}
+
+	// 正式环境读取隐写的数据
+	{
+		raw, hide, err := tunnel.ReadHide()
 	}
 
 	// 下面是常用的几种 HTTP 服务框架如何实现 tunnel.Server 接口的示例，
@@ -39,7 +47,7 @@ func main() {
 	server = fromShip()            // https://github.com/xgfone/ship
 	server = fromGin()             // https://github.com/gin-gonic/gin
 	server = fromStd()             // https://github.com/golang/go
-	
+
 	// tunnel.Dial 是阻塞式连接。如果连接失败，Dial 会一直重试直至成功或遇到不可重试的错误。
 	// 也就是说当 tunnel.Dial 方法返回时，如果 err != nil 代表着该 agent 没有必要继续启动了。
 	//
@@ -47,7 +55,7 @@ func main() {
 	// 		1. 中心端将 agent 删除，agent 没有必要再运行了。
 	// 		2. 参数配置错误
 	tun, err := tunnel.Dial(ctx, hide, server)
-	
+
 }
 
 // https://github.com/valyala/fasthttp/
