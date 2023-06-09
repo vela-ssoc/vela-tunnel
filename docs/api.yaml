@@ -377,6 +377,40 @@ paths:
       tags:
         - Broker
       description: '目前仅只支持 [bulk](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html) 操作。agent 要遵循 elastic bulk 的报文规则。'
+  /agent/notice/upgrade:
+    post:
+      summary: 升级通知回调
+      operationId: post-agent-notice-upgrade
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: |-
+        有新版本更新时，会通过该接口回调通知 `agent` 节点。
+        收到该通知后 `agent` 可调用 [检查更新接口](/operations/get-broker-upgrade-download) 来检查是否有新的更新包。
+        该通知只是告诉 `agent` 执行检查更新，不代表一定有了新版本发布。
+  /broker/upgrade/download:
+    get:
+      summary: 检查更新客户端
+      tags:
+        - Broker
+      responses: {}
+      operationId: get-broker-upgrade-download
+      description: |-
+        请求参数中的 `tags` 是可以为空，元素不可重复，不能大于 16 个标签。这些标签会被隐写在二进制文件中。
+
+        ```go
+        q := url.Vaules{"tags": []strings{"aaa", "bbb", "ccc"}}
+        addr := "/api/v1/broker/upgrade/download?" + q.Encode()
+        att, err := tun.Attachment(ctx, addr)
+        ```
+      parameters:
+        - schema:
+            type: array
+          in: query
+          name: tags
+          description: 隐写标签
 components:
   schemas:
     TaskDiff:
