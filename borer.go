@@ -204,7 +204,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 	bt.ctx, bt.cancel = context.WithCancel(parent)
 	start := time.Now()
 
-	bt.slog.Infof("开始连接 broker ...")
+	bt.slog.Infof("准备连接 broker ...")
 	for {
 		conn, addr, err := bt.dialer.iterDial(bt.ctx, 3*time.Second)
 		if err != nil {
@@ -225,8 +225,9 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			return nil
 		}
 
-		if he, ok := err.(*netutil.HTTPError); ok && he.NotAcceptable() {
-			return he
+		// NotAcceptable() 说明该节点已经被标记为了删除状态，此时 agent 没有必要继续重试。
+		if exx, ok := err.(*netutil.HTTPError); ok && exx.NotAcceptable() {
+			return exx
 		}
 
 		du := bt.waitN(start)
@@ -341,12 +342,10 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 	var err error
 	for {
 		ln := bt.muxer
+		exx := srv.Serve(ln) // 如果连接正常则会阻塞在此
+		ntf.Disconnect(exx)  // 断开连接通知回调
 
-		// 如果连接正常则会阻塞在此
-		exx := srv.Serve(ln)
-
-		ntf.Disconnect(exx)
-		if err = ctx.Err(); err != nil {
+		if err = ctx.Err(); err != nil { // 判断是否需要重试
 			bt.slog.Warnf("连接已经断开不再重连：%s", err)
 			break
 		}
@@ -358,7 +357,7 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 		}
 		bt.slog.Infof("重连成功")
 		addr := bt.brkAddr
-		ntf.Reconnected(addr) // 重连回调
+		ntf.Reconnected(addr) // 重连成功通知回调
 	}
 
 	ntf.Shutdown(err)

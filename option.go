@@ -33,13 +33,14 @@ func WithInterval(interval time.Duration) Option {
 	}
 }
 
+// WithCoder 自定义 json 编解码器
 func WithCoder(coder Coder) Option {
 	return func(opt *option) {
 		opt.coder = coder
 	}
 }
 
-// WithNotifier 状态事件回调
+// WithNotifier tunnel 连接事件回调
 func WithNotifier(ntf Notifier) Option {
 	return func(opt *option) {
 		opt.ntf = ntf
@@ -51,6 +52,7 @@ type Coder interface {
 	NewDecoder(io.Reader) interface{ Decode(any) error }
 }
 
+// stdJSON 标准库 encoding/json 实现的 json 编解码器。
 type stdJSON struct{}
 
 func (stdJSON) NewEncoder(w io.Writer) interface{ Encode(any) error } { return json.NewEncoder(w) }
