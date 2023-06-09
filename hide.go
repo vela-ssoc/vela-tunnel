@@ -110,6 +110,10 @@ func (ads Addresses) Preformat() {
 
 type RawHide steganography.MinionHide
 
+func (h RawHide) String() string {
+	return steganography.MinionHide(h).String()
+}
+
 func ReadHide(names ...string) (RawHide, Hide, error) {
 	name := os.Args[0]
 	if len(names) != 0 && names[0] != "" {
