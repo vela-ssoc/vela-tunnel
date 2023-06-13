@@ -28,6 +28,62 @@ servers:
   - url: /api/v1
     description: 基础路径
 paths:
+  /agent/startup:
+    post:
+      summary: startup 配置推送回调
+      operationId: post-agent-startup
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: |-
+        startup 配置更新时会将该配置推送给对应的节点
+
+        ### startup 结构体示例
+
+        ```go
+        type Startup struct {
+          Node    Node      `json:"node"`
+          Logger  Logger    `json:"logger"`
+          Console Console   `json:"console"`
+          Extends []*Extend `json:"extends"`
+        }
+
+        type Node struct {
+          DNS    string `json:"dns"`
+          Prefix string `json:"prefix"`
+        }
+
+        type Logger struct {
+          Level    string `json:"level"`    // 日志级别 debug/info/error
+          Filename string `json:"filename"`
+          Console  bool   `json:"console"`
+          Format   string `json:"format"` // 日志格式 text/json
+          Caller   bool   `json:"caller"` // 是否打印调用函数名字
+          Skip     int    `json:"skip"`
+        }
+
+        type Console struct {
+          Enable  bool   `json:"enable"`
+          Network string `json:"network"`
+          Address string `json:"address"`
+          Script  string `json:"script"`
+        }
+
+        type Extend struct {
+          Name  string `json:"name"`
+          Type  string `json:"type"`  // number bool string ref string_readonly
+          Value string `json:"value"`
+        }
+        ```
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+        description: json 报文如上 struct 所示。
   /agent/task/diff:
     post:
       summary: 配置变更回调
