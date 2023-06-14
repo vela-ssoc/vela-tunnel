@@ -249,15 +249,19 @@ paths:
       description: |
         TCP over websocket 流式代理通道。
 
-        `address` 必须包含地址及端口号，例如：
-        - 1.1.1.1:8989
-        - example.com:80
+        `address` 支持 `tcp` `udp` `http` `https` 协议，例如：
+        - tcp://eaxmple.com:8888
+        - udp://example.com:9999
+        - http://example.com
+        - https://example.com:8443
+
+        > `tcp` `udp` 协议必须指明端口号。`http` 与 `https` 可以省略端口号。`http` 默认 `80`，`https` 默认 `443`
 
 
         ### 调用
 
         ```go
-        stm, err := tun.Stream(ctx, "/api/v1/broker/stream/tunnel?address=example.com:443", nil)
+        stm, err := tun.Stream(ctx, "/api/v1/broker/stream/tunnel?address=http://example.com:8080", nil)
         ```
       parameters:
         - schema:
@@ -267,24 +271,6 @@ paths:
           name: address
           required: true
           description: 地址
-  /broker/stream/elastic:
-    get:
-      summary: 【流式接口】ES 代理通道
-      tags:
-        - Broker
-        - Stream
-      responses:
-        '101':
-          description: 底层基于 websocket，所以接入成功返回的状态码是 `101`。
-      operationId: get-broker-stream-elastic
-      description: |
-        ES 流式代理通道。目前仅只支持 [bulk](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html) 操作。agent 要遵循 elastic bulk 的报文规则。
-
-        ### 调用
-
-        ```go
-        stm, err := tun.Stream(ctx, "/api/v1/broker/stream/elastic", nil)
-        ```
   /broker/collect/agent/sysinfo:
     post:
       summary: Agent 上报系统信息
@@ -467,6 +453,39 @@ paths:
           in: query
           name: tags
           description: 隐写标签
+  '/broker/proxy/elastic/{path}':
+    parameters:
+      - schema:
+          type: string
+        name: path
+        in: path
+        required: true
+    get:
+      summary: ES 正向代理
+      tags:
+        - Broker
+      responses: {}
+      operationId: get-broker-proxy-elastic-path
+      description: |-
+        ```go
+        // "github.com/olivere/elastic/v7"
+        doer := tun.Doer("/api/v1/broker/proxy/elastic")
+        cli, err := elastic.NewClient(elastic.SetHttpClient(doer))
+        ```
+    post:
+      summary: ES 正向代理
+      operationId: post-broker-proxy-elastic-path
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Broker
+      description: |-
+        ```go
+        // "github.com/olivere/elastic/v7"
+        doer := tun.Doer("/api/v1/broker/proxy/elastic")
+        cli, err := elastic.NewClient(elastic.SetHttpClient(doer))
+        ```
 components:
   schemas:
     TaskDiff:
