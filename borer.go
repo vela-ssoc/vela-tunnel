@@ -136,6 +136,16 @@ func (bt *borerTunnel) Stream(ctx context.Context, path string, header http.Head
 	return conn, err
 }
 
+// StreamConn 建立双向流
+func (bt *borerTunnel) StreamConn(ctx context.Context, path string, header http.Header) (net.Conn, error) {
+	ws, err := bt.Stream(ctx, path, header)
+	if err != nil {
+		return nil, err
+	}
+	conn := &websocketConn{ws: ws, rd: websocket.JoinMessages(ws, "")}
+	return conn, nil
+}
+
 func (bt *borerTunnel) fetchJSON(ctx context.Context, path string, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	if err := bt.coder.NewEncoder(buf).Encode(req); err != nil {

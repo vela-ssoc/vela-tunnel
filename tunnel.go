@@ -52,6 +52,9 @@ type Tunneler interface {
 
 	// Stream 建立双向流
 	Stream(ctx context.Context, path string, header http.Header) (*websocket.Conn, error)
+
+	// StreamConn 建立 net.Conn
+	StreamConn(ctx context.Context, path string, header http.Header) (net.Conn, error)
 }
 
 type Server interface {
