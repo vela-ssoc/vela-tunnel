@@ -197,25 +197,37 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 	ticker := time.NewTicker(inter)
 	defer ticker.Stop()
 
+	var failures int
+	const maximum = 5
+	const timeout = 5 * time.Second
+
 over:
 	for {
 		select {
 		case <-bt.parent.Done():
 			break over
 		case <-ticker.C:
-			bt.heartbeatSend(5 * time.Second)
+			if err := bt.heartbeatSend(timeout); err != nil {
+				failures++
+				bt.slog.Warnf("心跳包发送第 %d 次失败：%s", failures, err)
+			} else {
+				failures = 0
+			}
+
+			if failures >= maximum {
+				bt.slog.Warnf("连续 %d 心跳包发送失败，主动断开连接", maximum)
+				_ = bt.muxer.Close()
+			}
 		}
 	}
 }
 
-func (bt *borerTunnel) heartbeatSend(timeout time.Duration) {
+func (bt *borerTunnel) heartbeatSend(timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(bt.parent, timeout)
 	defer cancel()
 	const endpoint = "/api/v1/minion/ping"
 
-	if err := bt.Oneway(ctx, endpoint, nil, nil); err != nil {
-		bt.slog.Warnf("心跳包发送失败：%s", err)
-	}
+	return bt.Oneway(ctx, endpoint, nil, nil)
 }
 
 func (bt *borerTunnel) dial(parent context.Context) error {
