@@ -35,6 +35,9 @@ type Tunneler interface {
 	// NodeName 节点业务名称，部分地方可能会用到
 	NodeName() string
 
+	// Doer 发送请求
+	Doer(prefix string) Doer
+
 	// Fetch 请求响应式调用
 	Fetch(context.Context, string, io.Reader, http.Header) (*http.Response, error)
 

@@ -146,6 +146,15 @@ func (bt *borerTunnel) StreamConn(ctx context.Context, path string, header http.
 	return conn, nil
 }
 
+// Doer 带前缀的客户端
+func (bt *borerTunnel) Doer(prefix string) Doer {
+	prefix = strings.TrimRight(prefix, "/")
+	return &tunnelDo{
+		tun:    bt,
+		prefix: prefix,
+	}
+}
+
 func (bt *borerTunnel) fetchJSON(ctx context.Context, path string, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	if err := bt.coder.NewEncoder(buf).Encode(req); err != nil {

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/olivere/elastic/v7"
 	"github.com/vela-ssoc/vela-tunnel"
 )
 
@@ -37,6 +38,14 @@ func main() {
 			log.Printf("TCP over websocket 代理出错：%s", exx)
 		}
 	}()
+
+	doer := tun.Doer("/api/v1/forward/elastic")
+	esc, err := elastic.NewClient(elastic.SetHttpClient(doer))
+	log.Println(esc)
+	log.Println(err)
+
+	res, err := esc.Aliases().Do(context.Background())
+	log.Println(res, err)
 
 	<-ctx.Done()
 	log.Println("结束运行")

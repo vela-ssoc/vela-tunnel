@@ -3,10 +3,16 @@ module github.com/vela-ssoc/vela-tunnel/_example
 go 1.20
 
 require (
-	github.com/vela-ssoc/vela-common-mba v0.0.0-20230609032438-11353935e235
-	github.com/vela-ssoc/vela-tunnel v0.0.0-20230609021943-6fd4e95e7efb
+	github.com/olivere/elastic/v7 v7.0.32
+	github.com/vela-ssoc/vela-common-mba v0.0.0-20230613075657-284f14246a56
+	github.com/vela-ssoc/vela-tunnel v0.0.0-20230614022912-2d81f03ccbc4
 )
 
-require github.com/gorilla/websocket v1.5.0 // indirect
+require (
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+)
 
 replace github.com/vela-ssoc/vela-tunnel => ../
