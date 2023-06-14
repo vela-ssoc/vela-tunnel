@@ -197,9 +197,9 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 	ticker := time.NewTicker(inter)
 	defer ticker.Stop()
 
-	var failures int
-	const maximum = 5
-	const timeout = 5 * time.Second
+	var failures int                // 已经连续错误的次数
+	const maximum = 5               // 心跳连续错误次数
+	const timeout = 5 * time.Second // 每次心跳的超时时间
 
 over:
 	for {
@@ -211,7 +211,7 @@ over:
 				failures++
 				bt.slog.Warnf("心跳包发送第 %d 次失败：%s", failures, err)
 			} else {
-				failures = 0
+				failures = 0 // 发送成功就将连续错误次数置为 0
 			}
 
 			if failures >= maximum {

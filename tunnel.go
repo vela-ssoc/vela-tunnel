@@ -89,6 +89,8 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	// 心跳间隔小于等于 0 时代表关闭定时心跳，此时中心端不会对该节点定期心跳监控。
 	// 如果该值大于 0，则有效值在 30s - 1h 之间，如果参数不在有效区间则自动改为 3min。
 	// 如果设置了心跳，服务端 3 倍心跳间隔仍未收到该节点的任何数据包，则会强制断开 socket 连接。
+	// 客户端发送心跳如果连续 n 次错误，也会自己主动断开连接。
+	// 具体 n 是几，可以查看 borerTunnel.heartbeat 方法中的定义。
 	if opt.interval > 0 && (opt.interval < 30*time.Second || opt.interval > time.Hour) {
 		opt.interval = 3 * time.Minute
 	}
