@@ -443,6 +443,7 @@ paths:
                 version:
                   type: string
                   description: 需要升级到的版本号
+                  example: 1.2.3
         description: '`version` 为空时代表升级检查到最新版。不为空代表升级到指定版本（可能降级时会用到）'
   /broker/upgrade/download:
     get:
