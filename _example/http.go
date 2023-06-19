@@ -19,6 +19,7 @@ func NewServer() *http.Server {
 	mux.HandleFunc(prefix+"/agent/task/status", todo.TaskStatus)
 	mux.HandleFunc(prefix+"/agent/task/diff", todo.TaskDiff)
 	mux.HandleFunc(prefix+"/agent/third/diff", todo.TaskThird)
+	mux.HandleFunc(prefix+"/agent/upgrade", todo.Upgrade)
 
 	return &http.Server{Handler: mux}
 }
@@ -79,5 +80,10 @@ func (*todoHandle) TaskThird(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[TODO] 三方文件 %s 发生了 %s 事件", req.Name, req.Event)
 
+	w.WriteHeader(http.StatusOK)
+}
+
+func (*todoHandle) Upgrade(w http.ResponseWriter, r *http.Request) {
+	log.Println("[TODO] agent 检查自身二进制是否需要升级")
 	w.WriteHeader(http.StatusOK)
 }

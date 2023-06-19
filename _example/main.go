@@ -39,13 +39,17 @@ func main() {
 		}
 	}()
 
-	doer := tun.Doer("/api/v1/forward/elastic")
-	esc, err := elastic.NewClient(elastic.SetHttpClient(doer))
-	log.Println(esc)
-	log.Println(err)
-
-	res, err := esc.Aliases().Do(context.Background())
-	log.Println(res, err)
+	doer := tun.Doer("/api/v1/broker/proxy/elastic")
+	if esc, err := elastic.NewClient(elastic.SetHttpClient(doer)); err != nil {
+		log.Printf("创建 es 客户端错误：%s", err)
+	} else {
+		es := &elasticClient{
+			cli:   esc,
+			inter: time.Minute,
+			ctx:   ctx,
+		}
+		es.Monitor()
+	}
 
 	<-ctx.Done()
 	log.Println("结束运行")
