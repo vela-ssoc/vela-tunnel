@@ -434,6 +434,16 @@ paths:
         有新版本更新时，会通过该接口回调通知 `agent` 节点。
         收到该通知后 `agent` 可调用 [检查更新接口](/operations/get-broker-upgrade-download) 来检查是否有新的更新包。
         该通知只是告诉 `agent` 执行检查更新，不代表一定有了新版本发布。
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version:
+                  type: string
+                  description: 需要升级到的版本号
+        description: '`version` 为空时代表升级检查到最新版。不为空代表升级到指定版本（可能降级时会用到）'
   /broker/upgrade/download:
     get:
       summary: 检查更新客户端
