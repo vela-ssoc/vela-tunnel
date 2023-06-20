@@ -455,6 +455,8 @@ paths:
       description: |-
         请求参数中的 `tags` 是可以为空，元素不可重复，不能大于 16 个标签。这些标签会被隐写在二进制文件中。
 
+        `version` 代表要升级到哪个版本，空代表升级到最新版。
+
         ```go
         q := url.Vaules{"version": []string{"1.2.3"}, "tags": []strings{"aaa", "bbb", "ccc"}}
         addr := "/api/v1/broker/upgrade/download?" + q.Encode()
@@ -468,6 +470,7 @@ paths:
           description: 隐写标签
         - schema:
             type: string
+            example: 0.1.0
           in: query
           name: version
           description: 指定版本号，不填写则升级到最新版
@@ -504,6 +507,30 @@ paths:
         doer := tun.Doer("/api/v1/broker/proxy/elastic")
         cli, err := elastic.NewClient(elastic.SetHttpClient(doer))
         ```
+  /agent/notice/command:
+    post:
+      summary: 命令回调
+      operationId: post-agent-notice-command
+      responses:
+        '200':
+          description: OK
+      tags:
+        - Agent
+      description: |-
+        命令回调
+
+        `cmd` ：
+        - `offline` 节点重启
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cmd:
+                  type: string
+              required:
+                - cmd
 components:
   schemas:
     TaskDiff:

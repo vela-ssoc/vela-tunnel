@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/vela-ssoc/vela-common-mba v0.0.0-20230613075657-284f14246a56
-	github.com/vela-ssoc/vela-tunnel v0.0.0-20230614073201-8e45cf18d510
+	github.com/vela-ssoc/vela-tunnel v0.0.0-20230619082506-98a7ae1e0d10
 )
 
 require (
