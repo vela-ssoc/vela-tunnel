@@ -113,6 +113,12 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, path string, req any) err
 
 // Attachment 下载文件
 func (bt *borerTunnel) Attachment(ctx context.Context, path string) (*Attachment, error) {
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+	}
+
 	res, err := bt.fetch(ctx, http.MethodGet, path, nil, nil)
 	if err != nil {
 		return nil, err
@@ -170,6 +176,11 @@ func (bt *borerTunnel) fetchJSON(ctx context.Context, path string, req any) (*ht
 
 func (bt *borerTunnel) fetch(ctx context.Context, method, path string, rd io.Reader, header http.Header) (*http.Response, error) {
 	addr := bt.httpURL(path)
+	if ctx == nil {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+	}
 	return bt.client.Fetch(ctx, method, addr, rd, header)
 }
 
@@ -204,24 +215,25 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 
 	var failures int                // 已经连续错误的次数
 	const maximum = 5               // 心跳连续错误次数
-	const timeout = 5 * time.Second // 每次心跳的超时时间
+	const timeout = 5 * time.Minute // 每次心跳的超时时间
 
-over:
-	for {
+	var over bool
+	for !over {
 		select {
 		case <-bt.parent.Done():
-			break over
+			over = true
 		case <-ticker.C:
-			if err := bt.heartbeatSend(timeout); err != nil {
-				failures++
-				bt.slog.Warnf("心跳包发送第 %d 次失败：%s", failures, err)
-			} else {
+			err := bt.heartbeatSend(timeout)
+			if err == nil {
 				failures = 0 // 发送成功就将连续错误次数置为 0
+				break
 			}
 
-			if failures >= maximum {
-				bt.slog.Warnf("连续 %d 次心跳包发送失败，主动断开连接", maximum)
+			if failures++; failures >= maximum {
+				bt.slog.Warnf("连续 %d 次心跳包发送失败：%s，主动断开连接", failures, err)
 				_ = bt.muxer.Close()
+			} else {
+				bt.slog.Warnf("心跳包发送第 %d 次失败：%s", failures, err)
 			}
 		}
 	}
@@ -256,7 +268,9 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		cancel()
 		if err == nil {
 			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
-			bt.muxer = smux.Client(conn, nil)
+			cfg := smux.DefaultConfig()
+			cfg.KeepAliveDisabled = true
+			bt.muxer = smux.Client(conn, cfg)
 			// bt.muxer = spdy.Client(conn, spdy.WithEncrypt(issue.Passwd))
 			bt.slog.Infof("连接 broker(%s) 成功", addr)
 			return nil

@@ -91,7 +91,7 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	// 如果设置了心跳，服务端 3 倍心跳间隔仍未收到该节点的任何数据包，则会强制断开 socket 连接。
 	// 客户端发送心跳如果连续 n 次错误，也会自己主动断开连接。
 	// 具体 n 是几，可以查看 borerTunnel.heartbeat 方法中的定义。
-	if opt.interval > 0 && (opt.interval < 30*time.Second || opt.interval > time.Hour) {
+	if opt.interval > 0 && (opt.interval < 10*time.Second || opt.interval > time.Hour) {
 		opt.interval = 3 * time.Minute
 	}
 

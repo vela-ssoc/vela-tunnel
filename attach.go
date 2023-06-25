@@ -46,7 +46,7 @@ func (att *Attachment) ZipFile() bool {
 	return strings.ToLower(ext) == ".zip"
 }
 
-func (att *Attachment) WriteTo(w io.Writer) (n int64, err error) {
+func (att *Attachment) WriteTo(w io.Writer) (int64, error) {
 	//goland:noinspection GoUnhandledErrorResult
 	defer att.rc.Close()
 	return io.Copy(w, att.rc)

@@ -23,7 +23,7 @@ func main() {
 	}
 
 	srv := NewServer()
-	tun, err := tunnel.Dial(ctx, hide, srv, tunnel.WithNotifier(ntf), tunnel.WithInterval(time.Minute))
+	tun, err := tunnel.Dial(ctx, hide, srv, tunnel.WithNotifier(ntf), tunnel.WithInterval(5*time.Second))
 	if err != nil {
 		log.Printf("tunnel 连接失败，结束运行：%v", err)
 		return
