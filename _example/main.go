@@ -8,7 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/olivere/elastic/v7"
 	"github.com/vela-ssoc/vela-tunnel"
 )
 
@@ -38,18 +37,6 @@ func main() {
 			log.Printf("TCP over websocket 代理出错：%s", exx)
 		}
 	}()
-
-	doer := tun.Doer("/api/v1/broker/proxy/elastic")
-	if esc, err := elastic.NewClient(elastic.SetHttpClient(doer)); err != nil {
-		log.Printf("创建 es 客户端错误：%s", err)
-	} else {
-		es := &elasticClient{
-			cli:   esc,
-			inter: time.Minute,
-			ctx:   ctx,
-		}
-		es.Monitor()
-	}
 
 	<-ctx.Done()
 	log.Println("结束运行")
