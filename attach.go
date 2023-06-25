@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,7 +36,8 @@ func (att *Attachment) Hash() string {
 
 // NotModified 文件是否未改变
 func (att *Attachment) NotModified() bool {
-	return att.code == http.StatusNotModified
+	return att.code%100 == 3
+	// return att.code == http.StatusNotModified
 }
 
 // ZipFile 判断文件是否是 zip 文件

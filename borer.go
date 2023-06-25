@@ -18,7 +18,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
-	"github.com/vela-ssoc/vela-common-mba/spdy"
+	"github.com/vela-ssoc/vela-common-mba/smux"
 )
 
 // borerTunnel 通道连接器
@@ -31,13 +31,14 @@ type borerTunnel struct {
 	dialer   dialer             // TCP 连接器
 	coder    Coder              // JSON 编解码器
 	brkAddr  *Address           // 当前连接的 broker 节点地址
-	muxer    spdy.Muxer         // 底层流复用
+	muxer    *smux.Session      // 底层流复用
 	client   netutil.HTTPClient // http 客户端
 	stream   netutil.Streamer   // 建立流式通道用
 	slog     Logger             // 日志输出组件
 	parent   context.Context    // parent context.Context
 	ctx      context.Context    // context.Context
 	cancel   context.CancelFunc // context.CancelFunc
+	// muxer    spdy.Muxer         // 底层流复用
 }
 
 // ID 节点 ID
@@ -190,7 +191,8 @@ func (bt *borerTunnel) newURL(scheme, path string) string {
 }
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {
-	return bt.muxer.Dial()
+	return bt.muxer.OpenStream()
+	// return bt.muxer.Dial()
 }
 
 func (bt *borerTunnel) heartbeat(inter time.Duration) {
@@ -215,7 +217,7 @@ over:
 			}
 
 			if failures >= maximum {
-				bt.slog.Warnf("连续 %d 心跳包发送失败，主动断开连接", maximum)
+				bt.slog.Warnf("连续 %d 次心跳包发送失败，主动断开连接", maximum)
 				_ = bt.muxer.Close()
 			}
 		}
@@ -251,7 +253,8 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		cancel()
 		if err == nil {
 			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
-			bt.muxer = spdy.Client(conn, spdy.WithEncrypt(issue.Passwd))
+			bt.muxer = smux.Client(conn, nil)
+			// bt.muxer = spdy.Client(conn, spdy.WithEncrypt(issue.Passwd))
 			bt.slog.Infof("连接 broker(%s) 成功", addr)
 			return nil
 		}
