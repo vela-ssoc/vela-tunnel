@@ -4,5 +4,5 @@ go 1.18
 
 require (
 	github.com/gorilla/websocket v1.5.0
-	github.com/vela-ssoc/vela-common-mba v0.0.0-20230625060802-676019c3eadf
+	github.com/vela-ssoc/vela-common-mba v0.0.0-20230625070742-d83d8ab68906
 )

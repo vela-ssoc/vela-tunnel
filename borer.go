@@ -191,7 +191,11 @@ func (bt *borerTunnel) newURL(scheme, path string) string {
 }
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {
-	return bt.muxer.OpenStream()
+	if stream, err := bt.muxer.OpenStream(); err != nil {
+		return nil, err
+	} else {
+		return stream, nil
+	}
 }
 
 func (bt *borerTunnel) heartbeat(inter time.Duration) {
