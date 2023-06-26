@@ -114,8 +114,10 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, path string, req any) err
 // Attachment 下载文件
 func (bt *borerTunnel) Attachment(ctx context.Context, path string) (*Attachment, error) {
 	if ctx == nil {
+		// Attachment 主要用于文件下载接口，文件下载相较于普通接口要耗时，
+		// 所以超时时间就设置长一点。
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 	}
 
@@ -192,6 +194,7 @@ func (bt *borerTunnel) wsURL(path string) string {
 	return bt.newURL("ws", path)
 }
 
+// newURL 构造 URL
 func (bt *borerTunnel) newURL(scheme, path string) string {
 	sn := strings.SplitN(path, "?", 2)
 	u := &url.URL{Scheme: scheme, Host: "soc", Path: sn[0]}
@@ -210,14 +213,15 @@ func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, e
 }
 
 func (bt *borerTunnel) heartbeat(inter time.Duration) {
+	const maximum = 5      // 心跳连续错误次数
+	timeout := time.Minute // 每次心跳包发送的超时时间
+	var total uint64       // 心跳包发送失败总次数
+	var sum int            // 心跳包发送失败连续次数
+	var over bool          // 是否终止不再发送心跳包
+
 	ticker := time.NewTicker(inter)
 	defer ticker.Stop()
 
-	var failures int                // 已经连续错误的次数
-	const maximum = 5               // 心跳连续错误次数
-	const timeout = 5 * time.Minute // 每次心跳的超时时间
-
-	var over bool
 	for !over {
 		select {
 		case <-bt.parent.Done():
@@ -225,15 +229,18 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 		case <-ticker.C:
 			err := bt.heartbeatSend(timeout)
 			if err == nil {
-				failures = 0 // 发送成功就将连续错误次数置为 0
+				sum = 0 // 发送成功就将连续错误次数置为 0
 				break
 			}
 
-			if failures++; failures >= maximum {
-				bt.slog.Warnf("连续 %d 次心跳包发送失败：%s，主动断开连接", failures, err)
+			total++
+			sum++
+			if sum >= maximum {
+				sum = 0
+				bt.slog.Warnf("连续 %d 次（总共失败 %d 次）心跳包发送失败：%s，主动断开连接", sum, total, err)
 				_ = bt.muxer.Close()
 			} else {
-				bt.slog.Warnf("心跳包发送第 %d 次失败：%s", failures, err)
+				bt.slog.Warnf("心跳包连续第 %d 次（总共失败 %d 次）发送失败：%s", sum, total, err)
 			}
 		}
 	}

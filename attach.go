@@ -34,10 +34,9 @@ func (att *Attachment) Hash() string {
 	return att.hash
 }
 
-// NotModified 文件是否未改变
+// NotModified 文件未发生变化
 func (att *Attachment) NotModified() bool {
 	return att.code%100 == 3
-	// return att.code == http.StatusNotModified
 }
 
 // ZipFile 判断文件是否是 zip 文件
