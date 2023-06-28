@@ -206,7 +206,7 @@ func (bt *borerTunnel) newURL(scheme, path string) string {
 
 func (bt *borerTunnel) dialContext(context.Context, string, string) (net.Conn, error) {
 	if stream, err := bt.muxer.OpenStream(); err != nil {
-		return nil, err
+		return nil, err // 防止 *smux.Stream(nil)
 	} else {
 		return stream, nil
 	}
@@ -271,7 +271,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			continue
 		}
 		ctx, cancel := context.WithTimeout(bt.ctx, 5*time.Second)
-		ident, issue, err := bt.consult(ctx, conn, addr)
+		ident, issue, err := bt.handshake(ctx, conn, addr)
 		cancel()
 		if err == nil {
 			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
@@ -296,8 +296,8 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 	}
 }
 
-// consult 当建立好 TCP 连接后进行应用层协商
-func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Address) (Ident, Issue, error) {
+// handshake 握手协商
+func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Address) (Ident, Issue, error) {
 	ip := conn.LocalAddr().(*net.TCPAddr).IP
 	mac := bt.dialer.lookupMAC(ip)
 
@@ -348,7 +348,7 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
 
-	resp := make([]byte, 10*1024)
+	resp := make([]byte, 100*1024)
 	code := res.StatusCode
 	if code != http.StatusAccepted {
 		n, _ := io.ReadFull(res.Body, resp)
