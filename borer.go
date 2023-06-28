@@ -366,7 +366,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 //
 // 时长：0   3min   10min    30min        1h          12h                      ∞
 // 图例：└────┴──────┴─────────┴───────────┴───────────┴───────────────────────┘
-// 间隔：  2s    10s      30s       1min        5min              10min
+// 结果：  2s    10s      30s       1min        5min              10min
 func (*borerTunnel) waitN(start time.Time) time.Duration {
 	interval := time.Since(start)
 	switch {

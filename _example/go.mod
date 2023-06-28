@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/vela-ssoc/vela-common-mba v0.0.0-20230625070742-d83d8ab68906
-	github.com/vela-ssoc/vela-tunnel v0.0.0-20230626033003-0a9fd45bb31b
+	github.com/vela-ssoc/vela-tunnel v0.0.0-20230628075743-6bd571cc7bfc
 )
 
 require github.com/gorilla/websocket v1.5.0 // indirect
