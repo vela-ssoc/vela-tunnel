@@ -362,23 +362,27 @@ func (bt *borerTunnel) consult(parent context.Context, conn net.Conn, addr *Addr
 	return ident, issue, nil
 }
 
-// waitN 计算需要休眠多久
-func (bt *borerTunnel) waitN(start time.Time) time.Duration {
-	since := time.Since(start)
-	du := time.Second
+// waitN 计算下次客户端重试等待间隔。
+//
+// 时长：0   3min   10min    30min        1h          12h                      ∞
+// 图例：└────┴──────┴─────────┴───────────┴───────────┴───────────────────────┘
+// 间隔：  2s    10s      30s       1min        5min              10min
+func (*borerTunnel) waitN(start time.Time) time.Duration {
+	interval := time.Since(start)
 	switch {
-	case since > 12*time.Hour:
-		du = 10 * time.Minute
-	case since > time.Hour:
-		du = time.Minute
-	case since > 30*time.Minute:
-		du = 30 * time.Second
-	case since > 10*time.Minute:
-		du = 10 * time.Second
-	case since > 3*time.Minute:
-		du = 3 * time.Second
+	case interval < 3*time.Minute:
+		return 2 * time.Second
+	case interval < 10*time.Minute:
+		return 10 * time.Second
+	case interval < 30*time.Minute:
+		return 30 * time.Second
+	case interval < time.Hour:
+		return time.Minute
+	case interval < 12*time.Hour:
+		return 5 * time.Minute
+	default:
+		return 10 * time.Minute
 	}
-	return du
 }
 
 // sleepN 协程休眠
