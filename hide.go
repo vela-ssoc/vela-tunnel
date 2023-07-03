@@ -21,6 +21,9 @@ type Hide struct {
 	// [SemVer]: https://semver.org/lang/zh-CN/
 	Semver string `json:"semver"`
 
+	// Clam 是否开启静默模式，仅在节点注册时有效
+	Clam bool `json:"clam"`
+
 	// Ethernet 内网连接地址
 	Ethernet Addresses `json:"ethernet"`
 
@@ -129,6 +132,7 @@ func ReadHide(names ...string) (RawHide, Hide, error) {
 
 	// 将老的转为新的
 	hide.Semver = raw.Edition
+	hide.Clam = raw.Clam
 	for _, s := range raw.LAN {
 		addr := parseURL(s)
 		hide.Ethernet = append(hide.Ethernet, addr)

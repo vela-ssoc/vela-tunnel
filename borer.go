@@ -278,7 +278,6 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			cfg := smux.DefaultConfig()
 			cfg.Passwd = issue.Passwd
 			bt.muxer = smux.Client(conn, cfg)
-			// bt.muxer = spdy.Client(conn, spdy.WithEncrypt(issue.Passwd))
 			bt.slog.Infof("连接 broker(%s) 成功", addr)
 			return nil
 		}
@@ -311,6 +310,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		PID:      os.Getpid(),
 		Interval: bt.interval,
 		TimeAt:   time.Now(),
+		Clam:     bt.hide.Clam,
 		Encrypt:  true,
 	}
 	ident.Hostname, _ = os.Hostname()
