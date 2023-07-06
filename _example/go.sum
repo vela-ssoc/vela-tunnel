@@ -4,3 +4,5 @@ github.com/vela-ssoc/vela-common-mba v0.0.0-20230630011300-0e6c1d3908e2 h1:lS2+f
 github.com/vela-ssoc/vela-common-mba v0.0.0-20230630011300-0e6c1d3908e2/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20230703055731-08f34aebb69e h1:+FnCSIFfkG7i1jikOQnmWUwRCor4gI5xTj54BRldzMc=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20230703055731-08f34aebb69e/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
+github.com/vela-ssoc/vela-common-mba v0.0.0-20230706050807-99f8ad5a1a39 h1:IpRHwfi2XLLc3K4bSFB9fj2ZK9rhUGzPbuObpEfD164=
+github.com/vela-ssoc/vela-common-mba v0.0.0-20230706050807-99f8ad5a1a39/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=

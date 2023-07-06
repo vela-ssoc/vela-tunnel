@@ -32,6 +32,12 @@ type Tunneler interface {
 	// BrkAddr 当前连接成功的 broker 节点地址
 	BrkAddr() *Address
 
+	// LocalAddr 当前连接 socket 的本地地址，无连接则返回 nil
+	LocalAddr() net.Addr
+
+	// RemoteAddr 当前连接 socket 的远端地址，无连接则返回 nil
+	RemoteAddr() net.Addr
+
 	// NodeName 节点业务名称，部分地方可能会用到
 	NodeName() string
 

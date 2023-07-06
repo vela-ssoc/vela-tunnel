@@ -31,6 +31,8 @@ type borerTunnel struct {
 	dialer   dialer             // TCP 连接器
 	coder    Coder              // JSON 编解码器
 	brkAddr  *Address           // 当前连接的 broker 节点地址
+	laddr    net.Addr           // socket 连接本地地址
+	raddr    net.Addr           // socket 连接的远端地址
 	muxer    *smux.Session      // 底层流复用
 	client   netutil.HTTPClient // http 客户端
 	stream   netutil.Streamer   // 建立流式通道用
@@ -69,6 +71,14 @@ func (bt *borerTunnel) Issue() Issue {
 // BrkAddr 当前连接的 broker 地址
 func (bt *borerTunnel) BrkAddr() *Address {
 	return bt.brkAddr
+}
+
+func (bt *borerTunnel) LocalAddr() net.Addr {
+	return bt.laddr
+}
+
+func (bt *borerTunnel) RemoteAddr() net.Addr {
+	return bt.raddr
 }
 
 // NodeName 生成的节点名字
@@ -249,9 +259,8 @@ func (bt *borerTunnel) heartbeat(inter time.Duration) {
 func (bt *borerTunnel) heartbeatSend(timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(bt.parent, timeout)
 	defer cancel()
-	const endpoint = "/api/v1/minion/ping"
 
-	return bt.Oneway(ctx, endpoint, nil, nil)
+	return bt.Oneway(ctx, "/api/v1/minion/ping", nil, nil)
 }
 
 func (bt *borerTunnel) dial(parent context.Context) error {
@@ -275,6 +284,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		cancel()
 		if err == nil {
 			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
+			bt.laddr, bt.raddr = conn.LocalAddr(), conn.RemoteAddr()
 			cfg := smux.DefaultConfig()
 			cfg.Passwd = issue.Passwd
 			bt.muxer = smux.Client(conn, cfg)
@@ -297,12 +307,12 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 
 // handshake 握手协商
 func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Address) (Ident, Issue, error) {
-	ip := conn.LocalAddr().(*net.TCPAddr).IP
-	mac := bt.dialer.lookupMAC(ip)
+	inet := bt.localInet(conn.LocalAddr())
+	mac := bt.dialer.lookupMAC(inet)
 
 	ident := Ident{
 		Semver:   bt.hide.Semver,
-		Inet:     ip,
+		Inet:     inet,
 		MAC:      mac.String(),
 		Goos:     runtime.GOOS,
 		Arch:     runtime.GOARCH,
@@ -310,7 +320,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		PID:      os.Getpid(),
 		Interval: bt.interval,
 		TimeAt:   time.Now(),
-		Clam:     bt.hide.Clam,
+		Unload:   bt.hide.Unload,
 		Encrypt:  true,
 	}
 	ident.Hostname, _ = os.Hostname()
@@ -326,9 +336,8 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		return ident, issue, err
 	}
 
-	const endpoint = "/api/v1/minion"
 	body := bytes.NewReader(enc)
-	req, err := bt.client.NewRequest(parent, http.MethodConnect, endpoint, body, nil)
+	req, err := bt.client.NewRequest(parent, http.MethodConnect, "/api/v1/minion", body, nil)
 	if err != nil {
 		return ident, issue, err
 	}
@@ -361,6 +370,21 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	err = issue.decrypt(resp[:n])
 
 	return ident, issue, nil
+}
+
+func (*borerTunnel) localInet(addr net.Addr) net.IP {
+	switch a := addr.(type) {
+	case *net.TCPAddr:
+		return a.IP
+	case *net.UDPAddr:
+		return a.IP
+	case *net.IPNet:
+		return a.IP
+	case *net.IPAddr:
+		return a.IP
+	default:
+		return nil
+	}
 }
 
 // waitN 计算下次客户端重试等待间隔。
