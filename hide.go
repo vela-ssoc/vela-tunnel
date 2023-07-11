@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/vela-ssoc/vela-common-mba/ciphertext"
 	"github.com/vela-ssoc/vela-common-mba/definition"
-	"github.com/vela-ssoc/vela-common-mba/encipher"
 )
 
 // Hide 是 minion 节点的配置文件，正式发布时都会被隐写在二进制执行文件中，
@@ -126,7 +126,7 @@ func ReadHide(names ...string) (RawHide, Hide, error) {
 
 	var raw RawHide
 	var hide Hide
-	if err := encipher.ReadFile(name, &raw); err != nil {
+	if err := ciphertext.DecryptFile(name, &raw); err != nil {
 		return raw, hide, err
 	}
 

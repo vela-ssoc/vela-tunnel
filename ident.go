@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/vela-ssoc/vela-common-mba/encipher"
+	"github.com/vela-ssoc/vela-common-mba/ciphertext"
 )
 
 // Ident minion 节点握手认证时需要携带的信息，
@@ -38,5 +38,5 @@ func (ident Ident) String() string {
 
 // encrypt 身份信息加密
 func (ident Ident) encrypt() ([]byte, error) {
-	return encipher.EncryptJSON(ident)
+	return ciphertext.EncryptJSON(ident)
 }

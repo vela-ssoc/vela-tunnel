@@ -3,7 +3,7 @@ package tunnel
 import (
 	"encoding/json"
 
-	"github.com/vela-ssoc/vela-common-mba/encipher"
+	"github.com/vela-ssoc/vela-common-mba/ciphertext"
 )
 
 // Issue 认证成功后服务端返回的必要信息
@@ -20,5 +20,5 @@ func (iss Issue) String() string {
 
 // decrypt 数据解密
 func (iss *Issue) decrypt(data []byte) error {
-	return encipher.DecryptJSON(data, iss)
+	return ciphertext.DecryptJSON(data, iss)
 }

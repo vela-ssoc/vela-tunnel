@@ -20,6 +20,8 @@ func NewServer() *http.Server {
 	mux.HandleFunc(prefix+"/agent/task/diff", todo.TaskDiff)
 	mux.HandleFunc(prefix+"/agent/third/diff", todo.TaskThird)
 	mux.HandleFunc(prefix+"/agent/upgrade", todo.Upgrade)
+	mux.HandleFunc(prefix+"/agent/notice/command", todo.Command)
+	mux.HandleFunc(prefix+"/agent/startup", todo.Startup)
 
 	return &http.Server{Handler: mux}
 }
@@ -86,4 +88,18 @@ func (*todoHandle) TaskThird(w http.ResponseWriter, r *http.Request) {
 func (*todoHandle) Upgrade(w http.ResponseWriter, r *http.Request) {
 	log.Println("[TODO] agent 检查自身二进制是否需要升级")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *todoHandle) Command(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Cmd string `json:"cmd"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+	log.Printf("[TODO] 收到 %s 命令事件", req.Cmd)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *todoHandle) Startup(w http.ResponseWriter, r *http.Request) {
+	log.Print("[TODO] startup 发生了变更")
 }
