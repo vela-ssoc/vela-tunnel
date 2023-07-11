@@ -130,34 +130,40 @@ func ReadHide(names ...string) (RawHide, Hide, error) {
 		return raw, hide, err
 	}
 
+	servername := raw.Servername
 	// 将老的转为新的
 	hide.Semver = raw.Edition
 	hide.Unload = raw.Unload
 	for _, s := range raw.LAN {
-		addr := parseURL(s)
+		addr := parseURL(s, servername)
 		hide.Ethernet = append(hide.Ethernet, addr)
 	}
 	for _, s := range raw.VIP {
-		addr := parseURL(s)
+		addr := parseURL(s, servername)
 		hide.Internet = append(hide.Internet, addr)
 	}
 
 	return raw, hide, nil
 }
 
-func parseURL(rawURL string) *Address {
+func parseURL(rawURL, servername string) *Address {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return &Address{Addr: rawURL}
 	}
-	sn, _, _ := net.SplitHostPort(u.Host)
-	if sn == "" {
-		sn = u.Host
+
+	if servername == "" {
+		sn, _, _ := net.SplitHostPort(u.Host)
+		if sn == "" {
+			servername = u.Host
+		} else {
+			servername = sn
+		}
 	}
 
 	return &Address{
 		TLS:  u.Scheme == "wss",
 		Addr: u.Host,
-		Name: sn,
+		Name: servername,
 	}
 }
