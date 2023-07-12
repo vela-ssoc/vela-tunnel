@@ -24,10 +24,6 @@ type Ident struct {
 	Interval   time.Duration `json:"interval"`   // 心跳间隔，如果中心端 3 倍心跳仍未收到任何消息，中心端强制断开该连接
 	TimeAt     time.Time     `json:"time_at"`    // agent 当前时间
 	Unload     bool          `json:"unload"`     // 是否开启静默模式，仅在新注册节点时有效
-
-	// Encrypt 是否加密传输。
-	// Deprecated: 后续将删除该字段，默认所有数据加密传输。
-	Encrypt bool `json:"encrypt"` // 是否支持加密传输
 }
 
 // String fmt.Stringer

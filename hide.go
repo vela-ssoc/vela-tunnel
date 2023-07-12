@@ -130,8 +130,8 @@ func ReadHide(names ...string) (RawHide, Hide, error) {
 		return raw, hide, err
 	}
 
-	servername := raw.Servername
 	// 将老的转为新的
+	servername := raw.Servername
 	hide.Semver = raw.Edition
 	hide.Unload = raw.Unload
 	for _, s := range raw.LAN {

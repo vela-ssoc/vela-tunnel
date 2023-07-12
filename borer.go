@@ -273,7 +273,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		conn, addr, err := bt.dialer.iterDial(bt.ctx, 3*time.Second)
 		if err != nil {
 			du := bt.waitN(start)
-			bt.slog.Infof("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
+			bt.slog.Warnf("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
 			if err = bt.sleepN(du); err != nil {
 				return err
 			}
@@ -298,7 +298,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		}
 
 		du := bt.waitN(start)
-		bt.slog.Infof("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
+		bt.slog.Warnf("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
 		if err = bt.sleepN(du); err != nil {
 			return err
 		}
@@ -321,7 +321,6 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		Interval: bt.interval,
 		TimeAt:   time.Now(),
 		Unload:   bt.hide.Unload,
-		Encrypt:  true,
 	}
 	ident.Hostname, _ = os.Hostname()
 	ident.Workdir, _ = os.Getwd()
