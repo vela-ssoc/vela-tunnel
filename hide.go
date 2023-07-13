@@ -43,10 +43,10 @@ type Address struct {
 
 	// Addr 服务端地址，只需要填写地址或地址端口号，不需要路径
 	// Example:
-	//  	- soc.xxx.com
-	//  	- soc.xxx.com:9090
+	//  	- example.com
+	//  	- example.com:8080
 	//		- 10.10.10.2
-	// 		- 10.10.10.2:9090
+	// 		- 10.10.10.2:8443
 	// 如果没有显式指明端口号，则开启 TLS 默认为 443，未开启 TLS 默认为 80
 	Addr string `json:"addr" yaml:"addr"`
 

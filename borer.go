@@ -274,7 +274,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 		if err != nil {
 			du := bt.waitN(start)
 			bt.slog.Warnf("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
-			if err = bt.sleepN(du); err != nil {
+			if err = bt.parkN(du); err != nil {
 				return err
 			}
 			continue
@@ -299,7 +299,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 
 		du := bt.waitN(start)
 		bt.slog.Warnf("与 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
-		if err = bt.sleepN(du); err != nil {
+		if err = bt.parkN(du); err != nil {
 			return err
 		}
 	}
@@ -388,9 +388,9 @@ func (*borerTunnel) localInet(addr net.Addr) net.IP {
 
 // waitN 计算下次客户端重试等待间隔。
 //
-// 时长：0   3min   10min    30min        1h          12h                      ∞
-// 图例：└────┴──────┴─────────┴───────────┴───────────┴───────────────────────┘
-// 结果：  2s    10s      30s       1min        5min              10min
+// 时长：0  3min 10min 30min        1h         12h                      ∞
+// 图例：└──┴────┴───────┴──────────┴───────────┴───────────────────────┘
+// 结果： 2s  10s   30s      1min        5min              10min
 func (*borerTunnel) waitN(start time.Time) time.Duration {
 	interval := time.Since(start)
 	switch {
@@ -409,17 +409,17 @@ func (*borerTunnel) waitN(start time.Time) time.Duration {
 	}
 }
 
-// sleepN 协程休眠
-func (bt *borerTunnel) sleepN(du time.Duration) error {
+// parkN 协程休眠
+func (bt *borerTunnel) parkN(du time.Duration) error {
 	timer := time.NewTimer(du)
 	defer timer.Stop()
 	ctx := bt.ctx
 	select {
 	case <-timer.C:
+		return nil
 	case <-ctx.Done():
 		return ctx.Err()
 	}
-	return nil
 }
 
 func (bt *borerTunnel) serveHTTP(srv Server) {

@@ -32,10 +32,10 @@ type Tunneler interface {
 	// BrkAddr 当前连接成功的 broker 节点地址
 	BrkAddr() *Address
 
-	// LocalAddr 当前连接 socket 的本地地址，无连接则返回 nil
+	// LocalAddr 当前 socket 连接的本地地址，无连接则返回 nil
 	LocalAddr() net.Addr
 
-	// RemoteAddr 当前连接 socket 的远端地址，无连接则返回 nil
+	// RemoteAddr 当前 socket 连接的远端地址，无连接则返回 nil
 	RemoteAddr() net.Addr
 
 	// NodeName 节点业务名称，部分地方可能会用到
@@ -93,12 +93,12 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 		opt.ntf = new(emptyNotify)
 	}
 	// 心跳间隔小于等于 0 时代表关闭定时心跳，此时中心端不会对该节点定期心跳监控。
-	// 如果该值大于 0，则有效值在 30s - 1h 之间，如果参数不在有效区间则自动改为 3min。
+	// 如果该值大于 0，则有效值在 1min - 20min 之间，如果参数不在有效区间则自动改为 1min。
 	// 如果设置了心跳，服务端 3 倍心跳间隔仍未收到该节点的任何数据包，则会强制断开 socket 连接。
 	// 客户端发送心跳如果连续 n 次错误，也会自己主动断开连接。
 	// 具体 n 是几，可以查看 borerTunnel.heartbeat 方法中的定义。
-	if opt.interval > 0 && (opt.interval < 10*time.Second || opt.interval > time.Hour) {
-		opt.interval = 3 * time.Minute
+	if opt.interval > 0 && (opt.interval < time.Minute || opt.interval > 20*time.Minute) {
+		opt.interval = time.Minute
 	}
 
 	// 对地址预先处理
