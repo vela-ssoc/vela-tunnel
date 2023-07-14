@@ -390,12 +390,12 @@ func (*borerTunnel) localInet(addr net.Addr) net.IP {
 //
 // 时长：0  3min 10min 30min        1h         12h                      ∞
 // 图例：└──┴────┴───────┴──────────┴───────────┴───────────────────────┘
-// 结果： 2s  10s   30s      1min        5min              10min
+// 结果： 3s  10s   30s      1min        5min              10min
 func (*borerTunnel) waitN(start time.Time) time.Duration {
 	interval := time.Since(start)
 	switch {
 	case interval < 3*time.Minute:
-		return 2 * time.Second
+		return 3 * time.Second
 	case interval < 10*time.Minute:
 		return 10 * time.Second
 	case interval < 30*time.Minute:
