@@ -347,12 +347,12 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	}
 	req.Host = host
 	if err = req.Write(conn); err != nil {
-		return ident, issue, nil
+		return ident, issue, err
 	}
 
 	res, err := http.ReadResponse(bufio.NewReader(conn), req)
 	if err != nil {
-		return ident, issue, nil
+		return ident, issue, err
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
@@ -368,7 +368,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	n, _ := res.Body.Read(resp)
 	err = issue.decrypt(resp[:n])
 
-	return ident, issue, nil
+	return ident, issue, err
 }
 
 func (*borerTunnel) localInet(addr net.Addr) net.IP {
