@@ -102,8 +102,8 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	}
 
 	// 对地址预先处理
-	hide.Ethernet.Preformat()
-	hide.Internet.Preformat()
+	hide.Ethernet = hide.Ethernet.Preformat()
+	hide.Internet = hide.Internet.Preformat()
 	dial := newDialer(hide.Ethernet, hide.Internet)
 	bt := &borerTunnel{
 		hide:     hide,
