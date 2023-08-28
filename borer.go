@@ -425,15 +425,21 @@ func (bt *borerTunnel) parkN(du time.Duration) error {
 func (bt *borerTunnel) serveHTTP(srv Server) {
 	ctx := bt.parent
 	ntf := bt.ntf
+	gap := 5 * time.Second
+
 	var err error
 	for {
+		before := time.Now()
 		ln := bt.muxer
 		exx := srv.Serve(ln) // 如果连接正常则会阻塞在此
 		ntf.Disconnect(exx)  // 断开连接通知回调
 
-		if err = ctx.Err(); err != nil { // 判断是否需要重试
-			bt.slog.Warnf("连接已经断开不再重连：%s", err)
-			break
+		// 防止出现连接成功立马断开的情况。
+		if du := gap - time.Since(before); du > time.Second {
+			if err = bt.parkN(du); err != nil {
+				bt.slog.Warnf("连接已经断开不再重连：%s", err)
+				break
+			}
 		}
 
 		bt.slog.Warnf("连接已经断开，即将重连：%s", exx)
