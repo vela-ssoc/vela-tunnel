@@ -431,18 +431,20 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 	for {
 		before := time.Now()
 		ln := bt.muxer
-		exx := srv.Serve(ln) // 如果连接正常则会阻塞在此
-		ntf.Disconnect(exx)  // 断开连接通知回调
+		err = srv.Serve(ln) // 如果连接正常则会阻塞在此
+		bt.slog.Warnf("连接断开：%s", err)
+		ntf.Disconnect(err) // 断开连接通知回调
 
-		// 防止出现连接成功立马断开的情况。
+		// 防止出现连接成功立马断开的情况，如果连接成功立马断开，间隔过短就歇一会再试。
 		if du := gap - time.Since(before); du > time.Second {
+			bt.slog.Warnf("稍等 %s 后重连", du)
 			if err = bt.parkN(du); err != nil {
 				bt.slog.Warnf("连接已经断开不再重连：%s", err)
 				break
 			}
 		}
 
-		bt.slog.Warnf("连接已经断开，即将重连：%s", exx)
+		bt.slog.Warnf("即将重连...")
 		if err = bt.dial(ctx); err != nil {
 			bt.slog.Warnf("重连失败退出：%s", err)
 			break
@@ -452,5 +454,6 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 		ntf.Reconnected(addr) // 重连成功通知回调
 	}
 
+	bt.slog.Warnf("连接已经断开不再重连：%s", err)
 	ntf.Shutdown(err)
 }
