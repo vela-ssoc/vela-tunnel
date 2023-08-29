@@ -267,10 +267,11 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 	bt.parent = parent
 	bt.ctx, bt.cancel = context.WithCancel(parent)
 	start := time.Now()
+	timeout := 5 * time.Second
 
 	bt.slog.Infof("准备连接 broker ...")
 	for {
-		conn, addr, err := bt.dialer.iterDial(bt.ctx, 3*time.Second)
+		conn, addr, err := bt.dialer.iterDial(bt.ctx, timeout)
 		if err != nil {
 			du := bt.waitN(start)
 			bt.slog.Warnf("连接 broker(%s) 发生错误: %s, %s 后重试", addr, err, du)
@@ -279,7 +280,7 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			}
 			continue
 		}
-		ctx, cancel := context.WithTimeout(bt.ctx, 5*time.Second)
+		ctx, cancel := context.WithTimeout(bt.ctx, timeout)
 		ident, issue, err := bt.handshake(ctx, conn, addr)
 		cancel()
 		if err == nil {
@@ -292,8 +293,8 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			return nil
 		}
 
-		// NotAcceptable() 说明该节点已经被标记为了删除状态，此时 agent 没有必要继续重试。
-		if exx, ok := err.(*netutil.HTTPError); ok && exx.NotAcceptable() {
+		_ = conn.Close()                                                    // 握手协商失败就关闭连接
+		if exx, ok := err.(*netutil.HTTPError); ok && exx.NotAcceptable() { // NotAcceptable 代表节点已被删除
 			return exx
 		}
 
@@ -341,11 +342,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		return ident, issue, err
 	}
 
-	host := addr.Name
-	if host == "" {
-		host, _, _ = net.SplitHostPort(addr.Addr)
-	}
-	req.Host = host
+	req.Host = addr.Name // 设置 Host
 	if err = req.Write(conn); err != nil {
 		return ident, issue, err
 	}
