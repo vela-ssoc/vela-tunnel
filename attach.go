@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,15 +16,15 @@ type Attachment struct {
 	filename string
 	hash     string
 	code     int
-	rc       io.ReadCloser
+	body     io.ReadCloser
 }
 
 func (att *Attachment) Read(p []byte) (int, error) {
-	return att.rc.Read(p)
+	return att.body.Read(p)
 }
 
 func (att *Attachment) Close() error {
-	return att.rc.Close()
+	return att.body.Close()
 }
 
 func (att *Attachment) Filename() string {
@@ -36,7 +37,7 @@ func (att *Attachment) Hash() string {
 
 // NotModified 文件未发生变化
 func (att *Attachment) NotModified() bool {
-	return att.code%100 == 3
+	return att.code == http.StatusNotModified
 }
 
 // ZipFile 判断文件是否是 zip 文件
@@ -47,8 +48,8 @@ func (att *Attachment) ZipFile() bool {
 
 func (att *Attachment) WriteTo(w io.Writer) (int64, error) {
 	//goland:noinspection GoUnhandledErrorResult
-	defer att.rc.Close()
-	return io.Copy(w, att.rc)
+	defer att.body.Close()
+	return io.Copy(w, att.body)
 }
 
 func (att *Attachment) File(path string) (string, error) {
@@ -59,11 +60,11 @@ func (att *Attachment) File(path string) (string, error) {
 	//goland:noinspection GoUnhandledErrorResult
 	defer func() {
 		_ = file.Close()
-		_ = att.rc.Close()
+		_ = att.body.Close()
 	}()
 
 	h := md5.New()
-	r := io.TeeReader(att.rc, h)
+	r := io.TeeReader(att.body, h)
 	if _, err = io.Copy(file, r); err != nil {
 		return "", err
 	}

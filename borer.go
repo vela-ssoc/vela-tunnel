@@ -137,7 +137,7 @@ func (bt *borerTunnel) Attachment(ctx context.Context, path string) (*Attachment
 	}
 	att := &Attachment{
 		code: res.StatusCode,
-		rc:   res.Body,
+		body: res.Body,
 	}
 	disposition := res.Header.Get("Content-Disposition")
 	if _, params, _ := mime.ParseMediaType(disposition); params != nil {
