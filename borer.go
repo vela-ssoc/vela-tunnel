@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -354,7 +355,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
 
-	resp := make([]byte, 100*1024)
+	resp := make([]byte, 100*1024) // 100KiB
 	code := res.StatusCode
 	if code != http.StatusAccepted {
 		n, _ := io.ReadFull(res.Body, resp)
@@ -362,8 +363,10 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		return ident, issue, exr
 	}
 
-	n, _ := res.Body.Read(resp)
-	err = issue.decrypt(resp[:n])
+	n, err := io.ReadFull(res.Body, resp)
+	if err == nil || err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
+		err = issue.decrypt(resp[:n])
+	}
 
 	return ident, issue, err
 }
