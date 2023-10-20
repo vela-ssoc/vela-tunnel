@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"archive/zip"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -17,6 +18,7 @@ type Attachment struct {
 	hash     string
 	code     int
 	body     io.ReadCloser
+	cancel   context.CancelFunc
 }
 
 func (att *Attachment) Read(p []byte) (int, error) {
@@ -24,7 +26,9 @@ func (att *Attachment) Read(p []byte) (int, error) {
 }
 
 func (att *Attachment) Close() error {
-	return att.body.Close()
+	err := att.body.Close()
+	att.cancel()
+	return err
 }
 
 func (att *Attachment) Filename() string {
@@ -48,7 +52,7 @@ func (att *Attachment) ZipFile() bool {
 
 func (att *Attachment) WriteTo(w io.Writer) (int64, error) {
 	//goland:noinspection GoUnhandledErrorResult
-	defer att.body.Close()
+	defer att.Close()
 	return io.Copy(w, att.body)
 }
 
@@ -60,7 +64,7 @@ func (att *Attachment) File(path string) (string, error) {
 	//goland:noinspection GoUnhandledErrorResult
 	defer func() {
 		_ = file.Close()
-		_ = att.body.Close()
+		_ = att.Close()
 	}()
 
 	h := md5.New()

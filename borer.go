@@ -123,22 +123,25 @@ func (bt *borerTunnel) OnewayJSON(ctx context.Context, path string, req any) err
 }
 
 // Attachment 下载文件
-func (bt *borerTunnel) Attachment(ctx context.Context, path string) (*Attachment, error) {
-	if ctx == nil {
-		// Attachment 主要用于文件下载接口，文件下载相较于普通接口要耗时，
-		// 所以超时时间就设置长一点。
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
-		defer cancel()
+func (bt *borerTunnel) Attachment(parent context.Context, path string, timeouts ...time.Duration) (*Attachment, error) {
+	if parent == nil {
+		parent = context.Background()
+	}
+	timeout := 10 * time.Minute
+	if len(timeouts) > 0 && timeouts[0] > 0 {
+		timeout = timeouts[0]
 	}
 
+	ctx, cancel := context.WithTimeout(parent, timeout)
 	res, err := bt.fetch(ctx, http.MethodGet, path, nil, nil)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 	att := &Attachment{
-		code: res.StatusCode,
-		body: res.Body,
+		code:   res.StatusCode,
+		body:   res.Body,
+		cancel: cancel,
 	}
 	disposition := res.Header.Get("Content-Disposition")
 	if _, params, _ := mime.ParseMediaType(disposition); params != nil {
