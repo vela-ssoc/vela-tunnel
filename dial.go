@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"net/url"
 	"time"
 )
 
@@ -12,13 +13,17 @@ type dialer interface {
 	lookupMAC(net.IP) net.HardwareAddr
 }
 
-func newDialer(addrs Addresses) dialer {
-	return &iterDial{
-		dial:   &tls.Dialer{NetDialer: new(net.Dialer)},
-		macs:   make(map[string]net.HardwareAddr, 4),
-		addrs:  addrs,
-		length: len(addrs),
+func newDialer(addrs []string, servername string) dialer {
+	dl := &iterDial{
+		dial: &tls.Dialer{NetDialer: new(net.Dialer)},
+		macs: make(map[string]net.HardwareAddr, 4),
 	}
+
+	ads := dl.toAddrs(addrs, servername)
+	dl.addrs = ads
+	dl.length = len(ads)
+
+	return dl
 }
 
 type iterDial struct {
@@ -74,4 +79,45 @@ func (dl *iterDial) lookupMAC(ip net.IP) net.HardwareAddr {
 	dl.macs[sip] = mac
 
 	return mac
+}
+
+func (dl *iterDial) toAddrs(addrs []string, servername string) Addresses {
+	size := len(addrs)
+	ret := make(Addresses, 0, size)
+	tcps := make(map[string]struct{}, size)
+	ssls := make(map[string]struct{}, size)
+
+	for _, addr := range addrs {
+		host, port := dl.splitHP(addr)
+		sport, tport := port, port
+		if port == "" {
+			sport, tport = "443", "80"
+		}
+		shost := net.JoinHostPort(host, sport)
+		thost := net.JoinHostPort(host, tport)
+
+		if _, ok := ssls[shost]; !ok {
+			ssls[shost] = struct{}{}
+			ret = append(ret, &Address{TLS: true, Addr: shost, Name: servername})
+		}
+		if _, ok := tcps[thost]; !ok {
+			tcps[thost] = struct{}{}
+			ret = append(ret, &Address{Addr: thost, Name: servername})
+		}
+	}
+
+	return ret
+}
+
+// splitHP 分割出主机和端口号
+func (*iterDial) splitHP(hp string) (string, string) {
+	if u, _ := url.Parse(hp); u != nil {
+		hp = u.Host
+	}
+
+	if host, port, err := net.SplitHostPort(hp); err == nil {
+		return host, port
+	}
+
+	return hp, ""
 }

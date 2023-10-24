@@ -18,30 +18,30 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
 	"github.com/vela-ssoc/vela-common-mba/smux"
 )
 
 // borerTunnel 通道连接器
 type borerTunnel struct {
-	hide     Hide               // hide
-	ident    Ident              // ident
-	issue    Issue              // issue
-	ntf      Notifier           // 事件通知
-	interval time.Duration      // 心跳间隔
-	dialer   dialer             // TCP 连接器
-	coder    Coder              // JSON 编解码器
-	brkAddr  *Address           // 当前连接的 broker 节点地址
-	laddr    net.Addr           // socket 连接本地地址
-	raddr    net.Addr           // socket 连接的远端地址
-	muxer    *smux.Session      // 底层流复用
-	client   netutil.HTTPClient // http 客户端
-	stream   netutil.Streamer   // 建立流式通道用
-	slog     Logger             // 日志输出组件
-	parent   context.Context    // parent context.Context
-	ctx      context.Context    // context.Context
-	cancel   context.CancelFunc // context.CancelFunc
-	// muxer    spdy.Muxer         // 底层流复用
+	hide     definition.MinionHide // hide
+	ident    Ident                 // ident
+	issue    Issue                 // issue
+	ntf      Notifier              // 事件通知
+	interval time.Duration         // 心跳间隔
+	dialer   dialer                // TCP 连接器
+	coder    Coder                 // JSON 编解码器
+	brkAddr  *Address              // 当前连接的 broker 节点地址
+	laddr    net.Addr              // socket 连接本地地址
+	raddr    net.Addr              // socket 连接的远端地址
+	muxer    *smux.Session         // 底层流复用
+	client   netutil.HTTPClient    // http 客户端
+	stream   netutil.Streamer      // 建立流式通道用
+	slog     Logger                // 日志输出组件
+	parent   context.Context       // parent context.Context
+	ctx      context.Context       // context.Context
+	cancel   context.CancelFunc    // context.CancelFunc
 }
 
 // ID 节点 ID
@@ -55,7 +55,7 @@ func (bt *borerTunnel) Inet() net.IP {
 }
 
 // Hide 配置信息
-func (bt *borerTunnel) Hide() Hide {
+func (bt *borerTunnel) Hide() definition.MinionHide {
 	return bt.hide
 }
 
@@ -316,7 +316,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	mac := bt.dialer.lookupMAC(inet)
 
 	ident := Ident{
-		Semver:   bt.hide.Semver,
+		Semver:   bt.hide.Edition,
 		Inet:     inet,
 		MAC:      mac.String(),
 		Goos:     runtime.GOOS,

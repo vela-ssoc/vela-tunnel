@@ -1,9 +1,6 @@
 package tunnel
 
 import (
-	"encoding/json"
-	"net"
-	"net/url"
 	"os"
 	"strings"
 
@@ -11,29 +8,18 @@ import (
 	"github.com/vela-ssoc/vela-common-mba/definition"
 )
 
-// Hide 是 minion 节点的配置文件，正式发布时都会被隐写在二进制执行文件中，
-// minion 启动时会读取自身文件中的隐写内容，解析出配置参数，所以叫 Hide。
-// 注意：实际线上正式发布后，只能从自身读出隐写配置，强烈不建议使用开发模式
-// 读取配置。
-type Hide struct {
-	// Semver 版本号，要遵循 [SemVer] 语义化版本
-	//
-	// [SemVer]: https://semver.org/lang/zh-CN/
-	Semver string `json:"semver"`
+func ReadHide(filename ...string) (definition.MinionHide, error) {
+	var name string
+	if len(filename) > 0 && filename[0] != "" {
+		name = filename[0]
+	} else {
+		name = os.Args[0]
+	}
 
-	// Unload 是否开启静默模式，仅在节点注册时有效
-	Unload bool `json:"unload"`
+	var hide definition.MinionHide
+	err := ciphertext.DecryptFile(name, &hide)
 
-	// Ethernet 内网连接地址
-	Ethernet Addresses `json:"ethernet"`
-
-	// Internet 外网连接地址
-	Internet Addresses `json:"internet"`
-}
-
-func (h Hide) String() string {
-	raw, _ := json.MarshalIndent(h, "", "  ")
-	return string(raw)
+	return hide, err
 }
 
 // Address broker 的服务地址
@@ -55,21 +41,11 @@ type Address struct {
 	// 当开启 TLS 时该 Name 会被设置为校验证书的 Servername。
 	// 如果该字段为空，则默认使用 Addr 的地址作为主机名。
 	Name string `json:"name" yaml:"name"`
-
-	// eth 是否是内网配置
-	eth bool
-}
-
-func (ad Address) Ethernet() bool {
-	return ad.eth
 }
 
 // String fmt.Stringer
 func (ad Address) String() string {
 	build := new(strings.Builder)
-	if ad.eth {
-		build.WriteString("eth ")
-	}
 	if ad.TLS {
 		build.WriteString("tls://")
 	} else {
@@ -88,117 +64,3 @@ func (ad Address) String() string {
 
 // Addresses broker 地址切片
 type Addresses []*Address
-
-// Preformat 对地址进行格式化处理，即：如果地址内有显式端口号，
-// 则根据是否开启 TLS 补充默认端口号
-func (ads Addresses) Preformat() Addresses {
-	size := len(ads)
-	tmap := make(map[string]*Address, size)
-	smap := make(map[string]*Address, size)
-	ret := make(Addresses, 0, 2*size)
-	for _, ad := range ads {
-		host, port := ads.splitHostPort(ad.Addr)
-		sport, tport := port, port
-		if port == "" {
-			sport, tport = "443", "80"
-		}
-		name := ad.Name
-		if name == "" {
-			name = host
-		}
-
-		saddr := net.JoinHostPort(host, sport)
-		if old := smap[saddr]; old == nil {
-			addr := &Address{TLS: true, Addr: saddr, Name: name}
-			smap[saddr] = addr
-			ret = append(ret, addr)
-		}
-
-		taddr := net.JoinHostPort(host, tport)
-		if old := tmap[taddr]; old == nil {
-			addr := &Address{Addr: taddr, Name: name}
-			tmap[taddr] = addr
-			ret = append(ret, addr)
-		}
-	}
-
-	return ret
-}
-
-// splitHostPort 截取 host 和 port
-func (Addresses) splitHostPort(str string) (string, string) {
-	if u, err := url.Parse(str); err == nil {
-		if u.Host != "" && u.Scheme != "" {
-			str = u.Host
-		}
-	}
-
-	if host, port, err := net.SplitHostPort(str); err == nil {
-		return host, port
-	}
-
-	return str, ""
-}
-
-type RawHide definition.MinionHide
-
-func (h RawHide) String() string {
-	return definition.MinionHide(h).String()
-}
-
-func ReadHide(names ...string) (RawHide, Hide, error) {
-	name := os.Args[0]
-	if len(names) != 0 && names[0] != "" {
-		name = names[0]
-	}
-
-	var raw RawHide
-	var hide Hide
-	if err := ciphertext.DecryptFile(name, &raw); err != nil {
-		return raw, hide, err
-	}
-
-	// 将老的转为新的
-	servername := raw.Servername
-	hide.Semver = raw.Edition
-	hide.Unload = raw.Unload
-	for _, s := range raw.LAN {
-		addr := parseURL(s, servername)
-		hide.Ethernet = append(hide.Ethernet, addr)
-	}
-	for _, s := range raw.VIP {
-		addr := parseURL(s, servername)
-		hide.Internet = append(hide.Internet, addr)
-	}
-
-	return raw, hide, nil
-}
-
-func parseURL(rawURL, servername string) *Address {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		addr := &Address{Addr: rawURL, Name: servername}
-		if servername == "" {
-			addr.Name, _, _ = net.SplitHostPort(rawURL)
-		}
-		return addr
-	}
-
-	if servername == "" {
-		sn, _, _ := net.SplitHostPort(u.Host)
-		if sn == "" {
-			servername = u.Host
-		} else {
-			servername = sn
-		}
-	}
-
-	scheme := u.Scheme
-	ssl := scheme == "wss" || scheme == "https" || scheme == "tls"
-
-	return &Address{
-		TLS:  ssl,
-		Addr: u.Host,
-		Name: servername,
-	}
-}

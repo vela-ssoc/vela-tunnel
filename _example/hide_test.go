@@ -7,8 +7,7 @@ import (
 )
 
 func TestName(t *testing.T) {
-	raw, hide, err := tunnel.ReadHide("ssc-worker.exe")
-	t.Log(raw)
+	hide, err := tunnel.ReadHide("ssc-worker.exe")
 	t.Log(hide)
 	t.Log(err)
 }

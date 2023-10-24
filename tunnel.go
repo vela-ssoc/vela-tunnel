@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
 )
 
@@ -21,7 +22,7 @@ type Tunneler interface {
 	Inet() net.IP
 
 	// Hide 数据
-	Hide() Hide
+	Hide() definition.MinionHide
 
 	// Ident 连接中心端的认证信息
 	Ident() Ident
@@ -74,11 +75,10 @@ var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空"
 
 // Dial 建立与服务端的通道连接。
 // 如果有网络不可达问题，该方法会一直重连直至成功，或者遇到不可重试的错误。
-func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunneler, error) {
-	addrs := make(Addresses, 0, len(hide.Internet)+len(hide.Ethernet))
-	addrs = append(addrs, hide.Ethernet...)
-	addrs = append(addrs, hide.Internet...)
-	addrs = addrs.Preformat()
+func Dial(parent context.Context, hide definition.MinionHide, srv Server, opts ...Option) (Tunneler, error) {
+	addrs := make([]string, 0, len(hide.LAN)+len(hide.VIP))
+	addrs = append(addrs, hide.LAN...)
+	addrs = append(addrs, hide.VIP...)
 	if len(addrs) == 0 {
 		return nil, ErrEmptyAddress
 	}
@@ -106,7 +106,7 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	}
 
 	// 对地址预先处理
-	dial := newDialer(addrs)
+	dial := newDialer(addrs, hide.Servername)
 	bt := &borerTunnel{
 		hide:     hide,
 		dialer:   dial,
