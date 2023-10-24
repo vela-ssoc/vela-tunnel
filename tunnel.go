@@ -75,7 +75,11 @@ var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空"
 // Dial 建立与服务端的通道连接。
 // 如果有网络不可达问题，该方法会一直重连直至成功，或者遇到不可重试的错误。
 func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunneler, error) {
-	if len(hide.Ethernet) == 0 && len(hide.Internet) == 0 {
+	addrs := make(Addresses, 0, len(hide.Internet)+len(hide.Ethernet))
+	addrs = append(addrs, hide.Internet...)
+	addrs = append(addrs, hide.Ethernet...)
+	addrs = addrs.Preformat()
+	if len(addrs) == 0 {
 		return nil, ErrEmptyAddress
 	}
 
@@ -102,9 +106,7 @@ func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunnel
 	}
 
 	// 对地址预先处理
-	hide.Ethernet = hide.Ethernet.Preformat()
-	hide.Internet = hide.Internet.Preformat()
-	dial := newDialer(hide.Ethernet, hide.Internet)
+	dial := newDialer(addrs)
 	bt := &borerTunnel{
 		hide:     hide,
 		dialer:   dial,

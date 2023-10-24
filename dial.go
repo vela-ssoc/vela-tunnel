@@ -12,21 +12,12 @@ type dialer interface {
 	lookupMAC(net.IP) net.HardwareAddr
 }
 
-func newDialer(ethernet, internet Addresses) dialer {
-	esz, isz := len(ethernet), len(internet)
-	length := esz + isz
-	addresses := make(Addresses, 0, length)
-	for _, a := range ethernet {
-		a.eth = true
-		addresses = append(addresses, a)
-	}
-	addresses = append(addresses, internet...)
-
+func newDialer(addrs Addresses) dialer {
 	return &iterDial{
 		dial:   &tls.Dialer{NetDialer: new(net.Dialer)},
 		macs:   make(map[string]net.HardwareAddr, 4),
-		addrs:  addresses,
-		length: length,
+		addrs:  addrs,
+		length: len(addrs),
 	}
 }
 
