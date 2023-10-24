@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-tunnel"
 )
 
@@ -16,10 +17,10 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), cares...)
 	ntf := NewNotify(cancel)
 
-	addr := &tunnel.Address{Addr: "10.228.162.244:1433", Name: "vela-ssoc-inline-yonghe.eastmoney.com"}
-	hide := tunnel.Hide{
-		Semver:   "0.0.1-example",
-		Ethernet: tunnel.Addresses{addr},
+	hide := definition.MinionHide{
+		Servername: "vela-ssoc-inline-yonghe.eastmoney.com",
+		LAN:        []string{"10.228.162.244:1433"},
+		Edition:    "0.0.0-unknown",
 	}
 
 	srv := NewServer()
