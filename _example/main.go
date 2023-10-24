@@ -16,7 +16,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), cares...)
 	ntf := NewNotify(cancel)
 
-	addr := &tunnel.Address{Addr: "172.31.61.168:8082"}
+	addr := &tunnel.Address{Addr: "10.228.162.244:1433", Name: "vela-ssoc-inline-yonghe.eastmoney.com"}
 	hide := tunnel.Hide{
 		Semver:   "0.0.1-example",
 		Ethernet: tunnel.Addresses{addr},

@@ -76,8 +76,8 @@ var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空"
 // 如果有网络不可达问题，该方法会一直重连直至成功，或者遇到不可重试的错误。
 func Dial(parent context.Context, hide Hide, srv Server, opts ...Option) (Tunneler, error) {
 	addrs := make(Addresses, 0, len(hide.Internet)+len(hide.Ethernet))
-	addrs = append(addrs, hide.Internet...)
 	addrs = append(addrs, hide.Ethernet...)
+	addrs = append(addrs, hide.Internet...)
 	addrs = addrs.Preformat()
 	if len(addrs) == 0 {
 		return nil, ErrEmptyAddress

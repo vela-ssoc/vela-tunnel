@@ -1,14 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-
-	"github.com/vela-ssoc/vela-tunnel"
 )
 
 func NewServer() *http.Server {
@@ -34,40 +29,12 @@ func (*todoHandle) TaskStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	// TODO 采集任务运行状态并返回
-
-	res := &tunnel.TaskReport{}
-	_ = json.NewEncoder(w).Encode(res)
 }
 
 func (*todoHandle) TaskDiff(w http.ResponseWriter, r *http.Request) {
-	var req tunnel.TaskDiff
-	_ = json.NewDecoder(r.Body).Decode(&req)
-	if req.NotModified() {
-		return
-	}
-
 	log.Printf("[TODO] 执行配置差异并返回最新状态")
 
 	// TODO 删除/执行配置后并采集最新的任务状态并返回
-	buf := bytes.NewBufferString("变更配置，")
-	if size := len(req.Removes); size != 0 {
-		buf.WriteString(fmt.Sprintf("删除 %d 个配置 ID：", size))
-		for _, id := range req.Removes {
-			buf.WriteString(strconv.FormatInt(id, 10) + ", ")
-		}
-	}
-	if size := len(req.Updates); size != 0 {
-		buf.WriteString(fmt.Sprintf("更新 %d 个配置：", size))
-		for _, up := range req.Updates {
-			buf.WriteString(fmt.Sprintf("%s，", up.Name))
-		}
-	}
-	log.Printf("配置差异：%s", buf)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	res := &tunnel.TaskReport{}
-	_ = json.NewEncoder(w).Encode(res)
 }
 
 func (*todoHandle) TaskThird(w http.ResponseWriter, r *http.Request) {

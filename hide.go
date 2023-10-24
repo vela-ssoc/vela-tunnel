@@ -177,7 +177,11 @@ func ReadHide(names ...string) (RawHide, Hide, error) {
 func parseURL(rawURL, servername string) *Address {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return &Address{Addr: rawURL}
+		addr := &Address{Addr: rawURL, Name: servername}
+		if servername == "" {
+			addr.Name, _, _ = net.SplitHostPort(rawURL)
+		}
+		return addr
 	}
 
 	if servername == "" {
@@ -189,8 +193,11 @@ func parseURL(rawURL, servername string) *Address {
 		}
 	}
 
+	scheme := u.Scheme
+	ssl := scheme == "wss" || scheme == "https" || scheme == "tls"
+
 	return &Address{
-		TLS:  u.Scheme == "wss",
+		TLS:  ssl,
 		Addr: u.Host,
 		Name: servername,
 	}
