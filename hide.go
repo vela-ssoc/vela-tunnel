@@ -117,7 +117,7 @@ func (ads Addresses) Preformat() Addresses {
 		taddr := net.JoinHostPort(host, tport)
 		if old := tmap[taddr]; old == nil {
 			addr := &Address{Addr: taddr, Name: name}
-			tmap[saddr] = addr
+			tmap[taddr] = addr
 			ret = append(ret, addr)
 		}
 	}
