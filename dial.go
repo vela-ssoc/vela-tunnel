@@ -111,7 +111,7 @@ func (dl *iterDial) toAddrs(addrs []string, servername string) Addresses {
 
 // splitHP 分割出主机和端口号
 func (*iterDial) splitHP(hp string) (string, string) {
-	if u, _ := url.Parse(hp); u != nil {
+	if u, _ := url.Parse(hp); u != nil && u.Scheme != "" {
 		hp = u.Host
 	}
 
