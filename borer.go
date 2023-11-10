@@ -25,23 +25,23 @@ import (
 
 // borerTunnel 通道连接器
 type borerTunnel struct {
-	hide     definition.MinionHide // hide
-	ident    Ident                 // ident
-	issue    Issue                 // issue
-	ntf      Notifier              // 事件通知
-	interval time.Duration         // 心跳间隔
-	dialer   dialer                // TCP 连接器
-	coder    Coder                 // JSON 编解码器
-	brkAddr  *Address              // 当前连接的 broker 节点地址
-	laddr    net.Addr              // socket 连接本地地址
-	raddr    net.Addr              // socket 连接的远端地址
-	muxer    *smux.Session         // 底层流复用
-	client   netutil.HTTPClient    // http 客户端
-	stream   netutil.Streamer      // 建立流式通道用
-	slog     Logger                // 日志输出组件
-	parent   context.Context       // parent context.Context
-	ctx      context.Context       // context.Context
-	cancel   context.CancelFunc    // context.CancelFunc
+	hide     definition.MHide   // hide
+	ident    Ident              // ident
+	issue    Issue              // issue
+	ntf      Notifier           // 事件通知
+	interval time.Duration      // 心跳间隔
+	dialer   dialer             // TCP 连接器
+	coder    Coder              // JSON 编解码器
+	brkAddr  *Address           // 当前连接的 broker 节点地址
+	laddr    net.Addr           // socket 连接本地地址
+	raddr    net.Addr           // socket 连接的远端地址
+	muxer    *smux.Session      // 底层流复用
+	client   netutil.HTTPClient // http 客户端
+	stream   netutil.Streamer   // 建立流式通道用
+	slog     Logger             // 日志输出组件
+	parent   context.Context    // parent context.Context
+	ctx      context.Context    // context.Context
+	cancel   context.CancelFunc // context.CancelFunc
 }
 
 // ID 节点 ID
@@ -55,7 +55,7 @@ func (bt *borerTunnel) Inet() net.IP {
 }
 
 // Hide 配置信息
-func (bt *borerTunnel) Hide() definition.MinionHide {
+func (bt *borerTunnel) Hide() definition.MHide {
 	return bt.hide
 }
 
@@ -315,17 +315,20 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	inet := bt.localInet(conn.LocalAddr())
 	mac := bt.dialer.lookupMAC(inet)
 
+	hide := bt.hide
 	ident := Ident{
-		Semver:   bt.hide.Edition,
-		Inet:     inet,
-		MAC:      mac.String(),
-		Goos:     runtime.GOOS,
-		Arch:     runtime.GOARCH,
-		CPU:      runtime.NumCPU(),
-		PID:      os.Getpid(),
-		Interval: bt.interval,
-		TimeAt:   time.Now(),
-		Unload:   bt.hide.Unload,
+		Inet:       inet,
+		MAC:        mac.String(),
+		CPU:        runtime.NumCPU(),
+		PID:        os.Getpid(),
+		Interval:   bt.interval,
+		TimeAt:     time.Now(),
+		Goos:       hide.Goos,
+		Arch:       hide.Arch,
+		Semver:     hide.Goos,
+		Unload:     hide.Unload,
+		Unstable:   hide.Unstable,
+		Customized: hide.Customized,
 	}
 	ident.Hostname, _ = os.Hostname()
 	ident.Workdir, _ = os.Getwd()

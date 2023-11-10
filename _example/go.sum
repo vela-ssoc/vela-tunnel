@@ -1,4 +1,6 @@
-github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
-github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230830084957-da2ff0015ca5 h1:OTwWLTVz+VUx9CiTuWdSYL5MBQpK+UweqmjIWg8ppmo=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20230830084957-da2ff0015ca5/go.mod h1:RuIJ6nu4LXosp8CSygyoD2d2B0+Nqg21zl5wKDUqVkI=
+github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/QY=
+github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
+github.com/vela-ssoc/vela-common-mba v0.0.0-20231110031019-8401a542e951 h1:LXBFdj77Uu7GapPTrXg8BRt+1Q2m06GBxTzkv41vNwY=
+github.com/vela-ssoc/vela-common-mba v0.0.0-20231110031019-8401a542e951/go.mod h1:FEaDUNnUyo5ZMXUjs9YQL7ZqxGwKkeau3hmnUKxKUOw=
+golang.org/x/net v0.18.0 h1:mIYleuAkSbHh0tCv7RvjL3F6ZVbLjq4+R7zbOn3Kokg=
+golang.org/x/net v0.18.0/go.mod h1:/czyP5RqHAH4odGYxBJ1qz0+CE5WZ+2j1YgoEo8F2jQ=

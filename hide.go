@@ -8,7 +8,7 @@ import (
 	"github.com/vela-ssoc/vela-common-mba/definition"
 )
 
-func ReadHide(filename ...string) (definition.MinionHide, error) {
+func ReadHide(filename ...string) (definition.MHide, error) {
 	var name string
 	if len(filename) > 0 && filename[0] != "" {
 		name = filename[0]
@@ -16,7 +16,7 @@ func ReadHide(filename ...string) (definition.MinionHide, error) {
 		name = os.Args[0]
 	}
 
-	var hide definition.MinionHide
+	var hide definition.MHide
 	err := ciphertext.DecryptFile(name, &hide)
 
 	return hide, err

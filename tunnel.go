@@ -22,7 +22,7 @@ type Tunneler interface {
 	Inet() net.IP
 
 	// Hide 数据
-	Hide() definition.MinionHide
+	Hide() definition.MHide
 
 	// Ident 连接中心端的认证信息
 	Ident() Ident
@@ -75,10 +75,8 @@ var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空"
 
 // Dial 建立与服务端的通道连接。
 // 如果有网络不可达问题，该方法会一直重连直至成功，或者遇到不可重试的错误。
-func Dial(parent context.Context, hide definition.MinionHide, srv Server, opts ...Option) (Tunneler, error) {
-	addrs := make([]string, 0, len(hide.LAN)+len(hide.VIP))
-	addrs = append(addrs, hide.LAN...)
-	addrs = append(addrs, hide.VIP...)
+func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Option) (Tunneler, error) {
+	addrs := hide.Addrs
 	if len(addrs) == 0 {
 		return nil, ErrEmptyAddress
 	}
