@@ -325,11 +325,18 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		TimeAt:     time.Now(),
 		Goos:       hide.Goos,
 		Arch:       hide.Arch,
-		Semver:     hide.Goos,
+		Semver:     hide.Semver,
 		Unload:     hide.Unload,
 		Unstable:   hide.Unstable,
 		Customized: hide.Customized,
 	}
+	if ident.Goos == "" {
+		ident.Goos = runtime.GOOS
+	}
+	if ident.Arch == "" {
+		ident.Arch = runtime.GOARCH
+	}
+
 	ident.Hostname, _ = os.Hostname()
 	ident.Workdir, _ = os.Getwd()
 	ident.Executable, _ = os.Executable()
