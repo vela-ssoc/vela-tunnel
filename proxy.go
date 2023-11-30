@@ -21,6 +21,12 @@ func (td *tunnelDo) Do(req *http.Request) (*http.Response, error) {
 	} else {
 		req.URL.Path = td.prefix + "/" + path
 	}
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = "http"
+	}
+	if req.URL.Host == "" {
+		req.URL.Host = "soc"
+	}
 
 	return td.tun.client.Do(req)
 }
