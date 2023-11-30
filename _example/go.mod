@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/vela-ssoc/vela-common-mba v0.0.0-20231129020857-de2b2be3073a
-	github.com/vela-ssoc/vela-tunnel v0.0.0-20231024095349-f7882f28425f
+	github.com/vela-ssoc/vela-tunnel v0.0.0-20231114083858-0bba503285cd
 )
 
 require (
