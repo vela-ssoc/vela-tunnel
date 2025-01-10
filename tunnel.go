@@ -65,6 +65,8 @@ type Tunneler interface {
 
 	// StreamConn 建立 net.Conn
 	StreamConn(ctx context.Context, path string, header http.Header) (net.Conn, error)
+
+	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
 }
 
 type Server interface {

@@ -178,6 +178,10 @@ func (bt *borerTunnel) Doer(prefix string) Doer {
 	}
 }
 
+func (bt *borerTunnel) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return bt.dialContext(ctx, network, address)
+}
+
 func (bt *borerTunnel) fetchJSON(ctx context.Context, path string, req any) (*http.Response, error) {
 	buf := new(bytes.Buffer)
 	if err := bt.coder.NewEncoder(buf).Encode(req); err != nil {
