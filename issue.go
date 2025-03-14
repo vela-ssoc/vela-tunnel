@@ -3,7 +3,7 @@ package tunnel
 import (
 	"encoding/json"
 
-	"github.com/vela-ssoc/ssoc-common-mba/ciphertext"
+	"github.com/vela-ssoc/vela-common-mba/ciphertext"
 )
 
 // Issue 认证成功后服务端返回的必要信息
