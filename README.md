@@ -2,7 +2,7 @@
 
 ## Go 版本锁定
 
-[Go1.24](https://go.dev/doc/go1.24#linux) 仅支持 kernel 3.2 或更高版本，为了保证兼容性、稳定性，`vela-tunnel` 将长期固定在 go1.24.x 版本。
+[Go1.24](https://go.dev/doc/go1.24#linux) 仅支持 kernel 3.2 或更高版本，为了保证兼容性、稳定性，`vela-tunnel` 将长期固定在 go1.24.x 版本。（2025-05-08）
 
 ## [接口文档](https://vela-ssoc.github.io/vela-tunnel/)
 
