@@ -11,9 +11,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
-	"os/user"
-	"runtime"
 	"strings"
 	"time"
 
@@ -21,7 +18,6 @@ import (
 	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
 	"github.com/vela-ssoc/vela-common-mba/smux"
-	"github.com/vela-ssoc/vela-tunnel/internal/machine"
 )
 
 // borerTunnel 通道连接器
@@ -29,6 +25,7 @@ type borerTunnel struct {
 	hide     definition.MHide   // hide
 	ident    Ident              // ident
 	issue    Issue              // issue
+	mident   Identifier         // 机器码
 	ntf      Notifier           // 事件通知
 	interval time.Duration      // 心跳间隔
 	dialer   dialer             // TCP 连接器
@@ -43,6 +40,7 @@ type borerTunnel struct {
 	parent   context.Context    // parent context.Context
 	ctx      context.Context    // context.Context
 	cancel   context.CancelFunc // context.CancelFunc
+	recreate bool               // 是否已经重新生成机器码
 }
 
 // ID 节点 ID
@@ -272,9 +270,8 @@ func (bt *borerTunnel) heartbeatSend(timeout time.Duration) error {
 	return bt.Oneway(ctx, "/api/v1/minion/ping", nil, nil)
 }
 
-func (bt *borerTunnel) dial(parent context.Context) error {
-	bt.parent = parent
-	bt.ctx, bt.cancel = context.WithCancel(parent)
+func (bt *borerTunnel) dial() error {
+	bt.ctx, bt.cancel = context.WithCancel(bt.parent)
 	start := time.Now()
 	timeout := 5 * time.Second
 
@@ -289,11 +286,9 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 			}
 			continue
 		}
-		ctx, cancel := context.WithTimeout(bt.ctx, timeout)
-		ident, issue, err := bt.handshake(ctx, conn, addr)
-		cancel()
+		issue, err := bt.handshake2(conn, addr, timeout)
 		if err == nil {
-			bt.ident, bt.issue, bt.brkAddr = ident, issue, addr
+			bt.issue, bt.brkAddr = issue, addr
 			bt.laddr, bt.raddr = conn.LocalAddr(), conn.RemoteAddr()
 			cfg := smux.DefaultConfig()
 			cfg.Passwd = issue.Passwd
@@ -315,65 +310,55 @@ func (bt *borerTunnel) dial(parent context.Context) error {
 	}
 }
 
+func (bt *borerTunnel) handshake2(conn net.Conn, addr *Address, timeout time.Duration) (Issue, error) {
+	issue, err := bt.handshake(conn, addr, timeout)
+	// 重新生成机器码
+	if he, yes := err.(*netutil.HTTPError); yes && !bt.recreate && he.Code == http.StatusConflict {
+		bt.recreate = true
+		lastMachineID := bt.ident.MachineID
+		machineID := bt.mident.MachineID(true)
+		if lastMachineID == machineID {
+			bt.slog.Warnf("重新生成机器码一致")
+		} else {
+			bt.slog.Infof("生成了新的机器码")
+		}
+	}
+
+	return issue, err
+}
+
 // handshake 握手协商
-func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Address) (Ident, Issue, error) {
+func (bt *borerTunnel) handshake(conn net.Conn, addr *Address, timeout time.Duration) (Issue, error) {
 	inet := bt.localInet(conn.LocalAddr())
 	mac := bt.dialer.lookupMAC(inet)
-
-	hide := bt.hide
-	ident := Ident{
-		MachineID:  hide.MachineID,
-		Inet:       inet,
-		MAC:        mac.String(),
-		CPU:        runtime.NumCPU(),
-		PID:        os.Getpid(),
-		Interval:   bt.interval,
-		TimeAt:     time.Now(),
-		Goos:       hide.Goos,
-		Arch:       hide.Arch,
-		Semver:     hide.Semver,
-		Unload:     hide.Unload,
-		Unstable:   hide.Unstable,
-		Customized: hide.Customized,
-	}
-	if ident.Goos == "" {
-		ident.Goos = runtime.GOOS
-	}
-	if ident.Arch == "" {
-		ident.Arch = runtime.GOARCH
-	}
-
-	ident.Hostname, _ = os.Hostname()
-	ident.Workdir, _ = os.Getwd()
-	ident.Executable, _ = os.Executable()
-	if cu, _ := user.Current(); cu != nil {
-		ident.Username = cu.Username
-	}
-	if ident.MachineID == "" {
-		mid, _ := machine.ID()
-		ident.MachineID = mid
-	}
+	ident := bt.ident
+	ident.Inet = inet
+	ident.MAC = mac.String()
+	ident.TimeAt = time.Now()
 
 	var issue Issue
 	enc, err := ident.encrypt()
 	if err != nil {
-		return ident, issue, err
+		return issue, err
 	}
 
+	ctx, cancel := context.WithTimeout(bt.parent, timeout)
+	defer cancel()
+
 	body := bytes.NewReader(enc)
-	req, err := bt.client.NewRequest(parent, http.MethodConnect, "/api/v1/minion", body, nil)
+	req, err := bt.client.NewRequest(ctx, http.MethodConnect, "/api/v1/minion", body, nil)
 	if err != nil {
-		return ident, issue, err
+		return issue, err
 	}
 
 	req.Host = addr.Name // 设置 Host
 	if err = req.Write(conn); err != nil {
-		return ident, issue, err
+		return issue, err
 	}
 
 	res, err := http.ReadResponse(bufio.NewReader(conn), req)
 	if err != nil {
-		return ident, issue, err
+		return issue, err
 	}
 	//goland:noinspection GoUnhandledErrorResult
 	defer res.Body.Close()
@@ -383,7 +368,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	if code != http.StatusAccepted {
 		n, _ := io.ReadFull(res.Body, resp)
 		exr := &netutil.HTTPError{Code: code, Body: resp[:n]}
-		return ident, issue, exr
+		return issue, exr
 	}
 
 	n, err := io.ReadFull(res.Body, resp)
@@ -391,7 +376,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 		err = issue.decrypt(resp[:n])
 	}
 
-	return ident, issue, err
+	return issue, err
 }
 
 func (*borerTunnel) localInet(addr net.Addr) net.IP {
@@ -446,7 +431,6 @@ func (bt *borerTunnel) parkN(du time.Duration) error {
 }
 
 func (bt *borerTunnel) serveHTTP(srv Server) {
-	ctx := bt.parent
 	ntf := bt.ntf
 	gap := 5 * time.Second
 
@@ -470,7 +454,7 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 		}
 
 		bt.slog.Warnf("即将重连...")
-		if err = bt.dial(ctx); err != nil {
+		if err = bt.dial(); err != nil {
 			bt.slog.Warnf("重连失败退出：%s", err)
 			break
 		}

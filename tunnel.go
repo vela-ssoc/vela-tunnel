@@ -2,15 +2,18 @@ package tunnel
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net"
 	"net/http"
+	"os"
+	"os/user"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
+	"github.com/vela-ssoc/vela-tunnel/internal/machine"
 )
 
 // Tunneler agent 节点与 broker 的连接器
@@ -75,14 +78,15 @@ type Server interface {
 	Serve(ln net.Listener) error
 }
 
-var ErrEmptyAddress = errors.New("内网地址与外网地址不能全部为空")
-
 // Dial 建立与服务端的通道连接。
 // 如果有网络不可达问题，该方法会一直重连直至成功，或者遇到不可重试的错误。
 func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Option) (Tunneler, error) {
 	addrs := hide.Addrs
 	if len(addrs) == 0 {
-		return nil, ErrEmptyAddress
+		addrs = []string{"localhost"}
+	}
+	if parent == nil {
+		parent = context.Background()
 	}
 
 	opt := new(option)
@@ -97,6 +101,9 @@ func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Opt
 	}
 	if opt.ntf == nil {
 		opt.ntf = new(emptyNotify)
+	}
+	if opt.ident == nil {
+		opt.ident = machine.NewGenerate(".ssoc-machine-id")
 	}
 	// 心跳间隔小于等于 0 时代表关闭定时心跳，此时中心端不会对该节点定期心跳监控。
 	// 如果该值大于 0，则有效值在 1min - 20min 之间，如果参数不在有效区间则自动改为 1min。
@@ -113,23 +120,28 @@ func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Opt
 		hide:     hide,
 		dialer:   dial,
 		ntf:      opt.ntf,
+		mident:   opt.ident,
 		slog:     opt.slog,
 		coder:    opt.coder,
 		interval: opt.interval,
+		parent:   parent,
 	}
+	bt.ident = bt.initIdent(hide)
+	bt.ident.Interval = bt.interval
+	bt.ident.MachineID = bt.mident.MachineID(false)
 
 	bt.stream = netutil.NewStream(bt.dialContext)        // 创建 stream 连接器
 	trip := &http.Transport{DialContext: bt.dialContext} // 创建 HTTP 客户端
 	bt.client = netutil.NewClient(trip)
 
-	if err := bt.dial(parent); err != nil {
+	if err := bt.dial(); err != nil {
 		bt.slog.Infof("连接 broker 失败：%v", err)
 		return nil, err
 	}
 
-	// 连接成功
-	if inter := opt.interval; inter > 0 { // 是否开启心跳
-		go bt.heartbeat(inter)
+	// 连接成功后是否开启心跳
+	if du := bt.interval; du > 0 { // 是否开启心跳
+		go bt.heartbeat(du)
 	}
 
 	// 开启监听
@@ -141,4 +153,31 @@ func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Opt
 	go bt.serveHTTP(srv)
 
 	return bt, nil
+}
+
+func (bt *borerTunnel) initIdent(hide definition.MHide) Ident {
+	ident := Ident{
+		CPU:        runtime.NumCPU(),
+		PID:        os.Getpid(),
+		Goos:       hide.Goos,
+		Arch:       hide.Arch,
+		Semver:     hide.Semver,
+		Unload:     hide.Unload,
+		Unstable:   hide.Unstable,
+		Customized: hide.Customized,
+	}
+	if ident.Goos == "" {
+		ident.Goos = runtime.GOOS
+	}
+	if ident.Arch == "" {
+		ident.Arch = runtime.GOARCH
+	}
+	ident.Workdir, _ = os.Getwd()
+	ident.Executable, _ = os.Executable()
+	ident.Hostname, _ = os.Hostname()
+	if cu, _ := user.Current(); cu != nil {
+		ident.Username = cu.Username
+	}
+
+	return ident
 }
