@@ -21,6 +21,7 @@ import (
 	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
 	"github.com/vela-ssoc/vela-common-mba/smux"
+	"github.com/vela-ssoc/vela-tunnel/internal/machine"
 )
 
 // borerTunnel 通道连接器
@@ -321,6 +322,7 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 
 	hide := bt.hide
 	ident := Ident{
+		MachineID:  hide.MachineID,
 		Inet:       inet,
 		MAC:        mac.String(),
 		CPU:        runtime.NumCPU(),
@@ -346,6 +348,10 @@ func (bt *borerTunnel) handshake(parent context.Context, conn net.Conn, addr *Ad
 	ident.Executable, _ = os.Executable()
 	if cu, _ := user.Current(); cu != nil {
 		ident.Username = cu.Username
+	}
+	if ident.MachineID == "" {
+		mid, _ := machine.ID()
+		ident.MachineID = mid
 	}
 
 	var issue Issue
