@@ -39,7 +39,9 @@ type Tunneler interface {
 	// RemoteAddr 当前 socket 连接的远端地址，无连接则返回 nil
 	RemoteAddr() net.Addr
 
-	// NodeName 节点业务名称，部分地方可能会用到
+	// NodeName 节点业务名称，部分地方可能会用到。
+	//
+	// Deprecated: 此接口无实际意义，请不要依赖该接口。
 	NodeName() string
 
 	// Doer 发送请求

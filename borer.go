@@ -450,6 +450,8 @@ func (bt *borerTunnel) serveHTTP(srv Server) {
 	ntf := bt.ntf
 	gap := 5 * time.Second
 
+	bt.ntf.Connected(bt.brkAddr)
+
 	var err error
 	for {
 		before := time.Now()
