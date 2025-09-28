@@ -331,13 +331,12 @@ func (bt *borerTunnel) handshake2(conn net.Conn, addr *Address, timeout time.Dur
 func (bt *borerTunnel) handshake(conn net.Conn, addr *Address, timeout time.Duration) (Issue, error) {
 	inet := bt.localInet(conn.LocalAddr())
 	mac := bt.dialer.lookupMAC(inet)
-	ident := bt.ident
-	ident.Inet = inet
-	ident.MAC = mac.String()
-	ident.TimeAt = time.Now()
+	bt.ident.Inet = inet
+	bt.ident.MAC = mac.String()
+	bt.ident.TimeAt = time.Now()
 
 	var issue Issue
-	enc, err := ident.encrypt()
+	enc, err := bt.ident.encrypt()
 	if err != nil {
 		return issue, err
 	}

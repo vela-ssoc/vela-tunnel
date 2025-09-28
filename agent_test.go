@@ -23,7 +23,7 @@ func TestAgent(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	_ = tun
+	t.Log(tun.Inet())
 
 	<-parent.Done()
 }
