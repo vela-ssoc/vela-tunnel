@@ -48,8 +48,8 @@ type Generate struct {
 	cachefile string
 }
 
-func (g Generate) MachineID(recreate bool) string {
-	if f := g.cachefile; f != "" && !recreate {
+func (g Generate) MachineID(rebuild bool) string {
+	if f := g.cachefile; f != "" && !rebuild {
 		if raw, _ := os.ReadFile(f); len(raw) != 0 {
 			return string(raw)
 		}
