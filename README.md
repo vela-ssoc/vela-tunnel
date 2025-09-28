@@ -21,6 +21,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
+	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-tunnel"
 	"github.com/xgfone/ship/v5"
 )
@@ -29,10 +30,10 @@ func main() {
 	ctx := context.Background()
 	// 测试环境自己手动输入参数
 	{
-		hide := tunnel.Hide{
-			Semver:   "0.0.1-example",
-			Ethernet: tunnel.Addresses{{Addr: "10.10.10.11:8080"}},
-			Internet: tunnel.Addresses{{TLS: true, Addr: "soc.example.com"}},
+		
+		hide := definition.MHide{
+			Semver:   "0.0.1-alpha",
+			Addrs: []string{"ssoc-broker.example.com:8443"},
 		}
 	}
 
