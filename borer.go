@@ -144,8 +144,7 @@ func (bt *borerTunnel) Attachment(parent context.Context, path string, timeouts 
 	}
 	disposition := res.Header.Get("Content-Disposition")
 	if _, params, _ := mime.ParseMediaType(disposition); params != nil {
-		att.filename = params["filename"]
-		att.hash = params["hash"]
+		att.dispositions = params
 	}
 
 	return att, nil

@@ -10,15 +10,15 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 type Attachment struct {
-	filename string
-	hash     string
-	code     int
-	body     io.ReadCloser
-	cancel   context.CancelFunc
+	dispositions map[string]string
+	code         int
+	body         io.ReadCloser
+	cancel       context.CancelFunc
 }
 
 func (att *Attachment) Read(p []byte) (int, error) {
@@ -32,11 +32,25 @@ func (att *Attachment) Close() error {
 }
 
 func (att *Attachment) Filename() string {
-	return att.filename
+	return att.dispositions["filename"]
 }
 
 func (att *Attachment) Hash() string {
-	return att.hash
+	return att.dispositions["hash"]
+}
+
+func (att *Attachment) ThirdInfo() ThirdInfo {
+	dis := att.dispositions
+	str := dis["id"]
+	num, _ := strconv.ParseInt(str, 10, 64)
+
+	return ThirdInfo{
+		ID:         num,
+		MD5:        dis["hash"],
+		Desc:       dis["desc"],
+		Customized: dis["customized"],
+		Extension:  dis["extension"],
+	}
 }
 
 // NotModified 文件未发生变化
@@ -46,7 +60,7 @@ func (att *Attachment) NotModified() bool {
 
 // ZipFile 判断文件是否是 zip 文件
 func (att *Attachment) ZipFile() bool {
-	ext := filepath.Ext(att.filename)
+	ext := filepath.Ext(att.Filename())
 	return strings.ToLower(ext) == ".zip"
 }
 
@@ -101,7 +115,7 @@ func (att *Attachment) Unzip(path string) error {
 		return os.ErrExist
 	}
 
-	temp := filepath.Join(path, att.filename)
+	temp := filepath.Join(path, att.Filename())
 	raw, err := os.Create(temp)
 	if err != nil {
 		return err
@@ -155,4 +169,12 @@ func (*Attachment) unzipTo(path string, rc io.ReadCloser) error {
 	_, err = io.Copy(file, rc)
 
 	return err
+}
+
+type ThirdInfo struct {
+	ID         int64  // 三方文件 ID
+	MD5        string // MD5
+	Desc       string // 说明
+	Customized string // 分类
+	Extension  string // 扩展名
 }

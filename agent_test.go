@@ -18,7 +18,7 @@ func TestAgent(t *testing.T) {
 	mux := http.NewServeMux()
 	srv := &http.Server{Handler: mux}
 
-	tun, err := tunnel.Dial(parent, hide, srv)
+	tun, err := tunnel.Dial(parent, hide, srv, tunnel.WithNotifier(&notifier{t: t}))
 	if err != nil {
 		t.Error(err)
 		return
@@ -26,4 +26,22 @@ func TestAgent(t *testing.T) {
 	t.Log(tun.Inet())
 
 	<-parent.Done()
+}
+
+type notifier struct {
+	t *testing.T
+}
+
+func (n notifier) Connected(addr *tunnel.Address) {
+	n.t.Log("连接成功了", addr.String())
+}
+
+func (n notifier) Disconnect(err error) {
+
+}
+
+func (n notifier) Reconnected(addr *tunnel.Address) {
+}
+
+func (n notifier) Shutdown(err error) {
 }
