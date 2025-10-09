@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 )
 
@@ -70,17 +71,16 @@ func (g Generate) generateAndSaveCache() string {
 func (g Generate) generate() string {
 	mid, _ := ID()
 	hostname, _ := os.Hostname()
-	networks := g.networks()
-	addr := strings.Join(networks, ",")
-	str := strings.Join([]string{mid, hostname, addr}, "|")
+	card := g.networks()
+	str := strings.Join([]string{mid, hostname, card}, ",")
 	sum := sha1.Sum([]byte(str))
 
 	return hex.EncodeToString(sum[:])
 }
 
-func (g Generate) networks() []string {
-	results := make([]string, 0, 10)
+func (g Generate) networks() string {
 	faces, _ := net.Interfaces()
+	cards := make(nics, 0, len(faces))
 	for _, face := range faces {
 		// 跳过换回网卡和未启用的网卡
 		if face.Flags&net.FlagUp == 0 ||
@@ -119,11 +119,43 @@ func (g Generate) networks() []string {
 				ips = append(ips, ip.String())
 			}
 			if len(ips) != 0 {
-				results = append(results, face.HardwareAddr.String())
-				results = append(results, ips...)
+				cards = append(cards, &nic{
+					MAC:   face.HardwareAddr.String(),
+					Inets: ips,
+				})
 			}
 		}
 	}
+	cards.sort()
 
-	return results
+	return cards.join()
+}
+
+type nic struct {
+	MAC   string
+	Inets []string
+}
+
+type nics []*nic
+
+func (ns nics) sort() {
+	slices.SortFunc(ns, func(a, b *nic) int {
+		return strings.Compare(a.MAC, b.MAC)
+	})
+	for _, n := range ns {
+		slices.Sort(n.Inets)
+	}
+}
+
+func (ns nics) join() string {
+	strs := make([]string, 0, len(ns))
+	for _, n := range ns {
+		ele := make([]string, 0, len(n.Inets)+1)
+		ele = append(ele, n.MAC)
+		ele = append(ele, n.Inets...)
+		line := strings.Join(ele, ",")
+		strs = append(strs, line)
+	}
+
+	return strings.Join(strs, ",")
 }
