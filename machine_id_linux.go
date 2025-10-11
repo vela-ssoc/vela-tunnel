@@ -1,6 +1,6 @@
 //go:build linux
 
-package machine
+package tunnel
 
 const (
 	// dbusPath is the default path for dbus machine id.

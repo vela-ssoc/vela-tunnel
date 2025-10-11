@@ -1,6 +1,6 @@
 //go:build darwin
 
-package machine
+package tunnel
 
 import (
 	"bytes"

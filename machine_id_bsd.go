@@ -1,6 +1,6 @@
 //go:build freebsd || netbsd || openbsd || dragonfly || solaris
 
-package machine
+package tunnel
 
 import (
 	"bytes"

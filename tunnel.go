@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-common-mba/netutil"
-	"github.com/vela-ssoc/vela-tunnel/internal/machine"
 )
 
 // Tunneler agent 节点与 broker 的连接器
@@ -103,7 +102,7 @@ func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Opt
 		opt.ntf = new(emptyNotify)
 	}
 	if opt.ident == nil {
-		opt.ident = machine.NewGenerate(".ssoc-machine-id")
+		opt.ident = NewMachineID(".ssoc-machine-id")
 	}
 	// 心跳间隔小于等于 0 时代表关闭定时心跳，此时中心端不会对该节点定期心跳监控。
 	// 如果该值大于 0，则有效值在 1min - 20min 之间，如果参数不在有效区间则自动改为 1min。

@@ -1,6 +1,6 @@
 //go:build windows
 
-package machine
+package tunnel
 
 import "golang.org/x/sys/windows/registry"
 
