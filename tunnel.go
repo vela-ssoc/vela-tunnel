@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -18,27 +19,43 @@ import (
 // Tunneler agent 节点与 broker 的连接器
 type Tunneler interface {
 	// ID minion 节点 ID
+	//
+	// Deprecated: 应用层不应该关心 Inet。
 	ID() int64
 
 	// Inet 出口 IP
+	//
+	// Deprecated: 应用层不应该关心 Inet。
 	Inet() net.IP
 
 	// Hide 数据
+	//
+	// Deprecated: 应用层不应该关心 LocalAddr。
 	Hide() definition.MHide
 
 	// Ident 连接中心端的认证信息
+	//
+	// Deprecated: 应用层不应该关心 Ident。
 	Ident() Ident
 
 	// Issue 中心端认证成功后返回的数据
+	//
+	// Deprecated: 应用层不应该关心 Issue。
 	Issue() Issue
 
-	// BrkAddr 当前连接成功的 broker 节点地址
+	// BrkAddr 当前连接成功的 broker 节点地址。
+	//
+	// Deprecated: 应用层不应该关心 LocalAddr。
 	BrkAddr() *Address
 
-	// LocalAddr 当前 socket 连接的本地地址，无连接则返回 nil
+	// LocalAddr 当前 socket 连接的本地地址，无连接则返回 nil。
+	//
+	// Deprecated: 应用层不应该关心 LocalAddr。
 	LocalAddr() net.Addr
 
 	// RemoteAddr 当前 socket 连接的远端地址，无连接则返回 nil
+	//
+	// Deprecated: 应用层不应该关心 LocalAddr。
 	RemoteAddr() net.Addr
 
 	// NodeName 节点业务名称，部分地方可能会用到。
@@ -47,27 +64,91 @@ type Tunneler interface {
 	NodeName() string
 
 	// Doer 发送请求
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	Doer(prefix string) Doer
 
 	// Fetch 请求响应式调用
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	Fetch(context.Context, string, io.Reader, http.Header) (*http.Response, error)
 
 	// Oneway 单向调用，不在乎返回值
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	Oneway(context.Context, string, io.Reader, http.Header) error
 
 	// JSON 请求与响应均为 json
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	JSON(context.Context, string, any, any) error
 
 	// OnewayJSON 请求数据格式化为 json 后发送，不关心不解析返回数据
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	OnewayJSON(context.Context, string, any) error
 
 	// Attachment 文件附件下载
+	//
+	// Deprecated: 请基于 DialContext 包装一个 http.Client。
+	// 	示例：
+	//		cli := &http.Client{
+	//			Transport: &http.Transport{
+	//				DialContext: tun.DialContext,
+	//			},
+	//		}
+	//
+	//		cli.Do(req)
 	Attachment(context.Context, string, ...time.Duration) (*Attachment, error)
 
 	// Stream 建立双向流
+	//
+	// Deprecated: 请基于 DialContext 自行实现。
 	Stream(ctx context.Context, path string, header http.Header) (*websocket.Conn, error)
 
 	// StreamConn 建立 net.Conn
+	//
+	// Deprecated: 请基于 DialContext 自行实现。
 	StreamConn(ctx context.Context, path string, header http.Header) (net.Conn, error)
 
 	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
@@ -82,8 +163,9 @@ type Server interface {
 func Dial(parent context.Context, hide definition.MHide, srv Server, opts ...Option) (Tunneler, error) {
 	addrs := hide.Addrs
 	if len(addrs) == 0 {
-		addrs = []string{"localhost"}
+		return nil, errors.New("地址不能为空")
 	}
+
 	if parent == nil {
 		parent = context.Background()
 	}
