@@ -12,6 +12,9 @@ import (
 type Muxer interface {
 	// OpenConn 开启一个虚拟子流。
 	OpenConn(ctx context.Context) (net.Conn, error)
+
+	// IsClosed 判断底层连接是否关闭。
+	IsClosed() bool
 }
 
 type safeMuxer struct {
@@ -29,6 +32,14 @@ func (sm *safeMuxer) OpenConn(context.Context) (net.Conn, error) {
 	} else {
 		return stm, nil
 	}
+}
+
+func (sm *safeMuxer) IsClosed() bool {
+	if sess := sm.load(); sess != nil {
+		return sess.IsClosed()
+	}
+
+	return false
 }
 
 func (sm *safeMuxer) store(sess *smux.Session) {

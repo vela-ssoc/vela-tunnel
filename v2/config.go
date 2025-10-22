@@ -42,7 +42,7 @@ func (oc *Config) format() error {
 	}
 	oc.Addresses = addrs
 	if len(oc.Addresses) == 0 {
-		return errors.New("no addresses found")
+		return errors.New("地址不能为空")
 	}
 
 	if oc.Dialer == nil {

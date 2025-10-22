@@ -9,6 +9,20 @@ type Server interface {
 	Serve(ln net.Listener) error
 }
 
+//type ConnectNotifier interface {
+//	// Connected 通道首次连接成功回调
+//	Connected()
+//
+//	// Disconnected 断开连接时回调函数
+//	Disconnected(err error)
+//
+//	// Reconnected 重连成功的回调函数
+//	Reconnected()
+//
+//	// Exited 退出连接，不再重连。
+//	Exited(err error)
+//}
+
 // Identifier agent 身份唯一标识。
 type Identifier interface {
 	// MachineID 获取机器码，机器码是 agent 节点的唯一标识。
@@ -41,6 +55,7 @@ type Optioner interface {
 type option struct {
 	ident  Identifier
 	server Server
+	// notifier ConnectNotifier
 	logger *slog.Logger
 }
 
@@ -99,8 +114,11 @@ func fallbackOption() Optioner {
 			o.server = new(closedServer)
 		}
 		if o.ident == nil {
-			o.ident = NewMachineID("")
+			o.ident = NewIdent(".SSOC_MACHINE_ID")
 		}
+		//if o.notifier == nil {
+		//	o.notifier = new(connectNotifier)
+		//}
 		return o
 	}
 
@@ -121,3 +139,13 @@ func (closedServer) Serve(ln net.Listener) error {
 		_ = conn.Close()
 	}
 }
+
+type connectNotifier struct{}
+
+func (c connectNotifier) Connected() {}
+
+func (c connectNotifier) Disconnected(err error) {}
+
+func (c connectNotifier) Reconnected() {}
+
+func (c connectNotifier) Exited(err error) {}

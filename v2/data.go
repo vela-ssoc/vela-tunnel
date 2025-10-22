@@ -10,6 +10,14 @@ type authResponse struct {
 	Message string `json:"message"`
 }
 
+func (ar *authResponse) String() string {
+	if err := ar.checkError(); err != nil {
+		return err.Error()
+	}
+
+	return "agent 认证成功"
+}
+
 func (ar *authResponse) checkError() error {
 	if ar.Code >= http.StatusOK && ar.Code < http.StatusMultipleChoices {
 		return nil
@@ -36,6 +44,3 @@ type authRequest struct {
 	Unstable   bool   `json:"unstable"`   // 不稳定版本
 	Customized string `json:"customized"` // 定制版本
 }
-
-// vmselect-vyLXvHHqzR6XJvntmtge
-// vminsert-RLV2AazVR9N9mDJPnWqd

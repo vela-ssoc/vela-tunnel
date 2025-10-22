@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func NewMachineID(cachefile string) Identifier {
+func NewIdent(cachefile string) Identifier {
 	return machineIDGenerate{
 		cachefile: cachefile,
 	}

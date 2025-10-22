@@ -37,15 +37,16 @@ func Open(ctx context.Context, cfg Config, opts ...Optioner) (Muxer, error) {
 	req.Workdir, _ = os.Getwd()
 	req.Hostname, _ = os.Hostname()
 
+	mux := new(safeMuxer)
 	mc := &muxerClient{
 		opt: opt,
 		cfg: cfg,
 		req: req,
+		mux: mux,
 		ctx: ctx,
 	}
 
-	mux, err := mc.open()
-	if err != nil {
+	if err := mc.open(); err != nil {
 		return nil, err
 	}
 
@@ -59,27 +60,36 @@ type muxerClient struct {
 	opt     option
 	cfg     Config
 	req     *authRequest
+	mux     *safeMuxer
 	ctx     context.Context
 	rebuild bool // 是否已经重新生成过机器码
 }
 
 func (mc *muxerClient) serve(ln net.Listener) {
 	const sleep = 3 * time.Second
+
+	// mc.opt.notifier.Connected() // 首次连接成功回调函数。
+
 	for {
 		srv := mc.opt.server
 		err := srv.Serve(ln)
+		_ = ln.Close()
+
 		attrs := []any{slog.Any("error", err), slog.Duration("timeout", sleep)}
-
 		mc.log().Warn("agent 掉线了", attrs...)
-		_ = mc.sleep(sleep)
-		if _, err = mc.open(); err != nil {
-			attrs = append(attrs, slog.Any("error", err))
-		}
+		// mc.opt.notifier.Disconnected(err) // 掉线回调函数。
 
+		_ = mc.sleep(sleep)
+		err = mc.open()
+		if err != nil {
+			// mc.opt.notifier.Exited(err) // 退出回调函数。
+			break
+		}
+		// mc.opt.notifier.Reconnected() // 重连成功回调函数。
 	}
 }
 
-func (mc *muxerClient) open() (*safeMuxer, error) {
+func (mc *muxerClient) open() error {
 	if mc.req.MachineID == "" {
 		mc.req.MachineID = mc.opt.ident.MachineID(false)
 	}
@@ -92,9 +102,8 @@ func (mc *muxerClient) open() (*safeMuxer, error) {
 	for {
 		sess, _, err := mc.connects(addrs, timeout)
 		if err == nil {
-			sm := new(safeMuxer)
-			sm.store(sess)
-			return sm, nil
+			mc.mux.store(sess)
+			return nil
 		}
 
 		fails++
@@ -102,7 +111,7 @@ func (mc *muxerClient) open() (*safeMuxer, error) {
 		mc.log().Warn("通道连接认证失败", "error", err, "sleep", sleep, "fails", fails, "addresses", addrs)
 		if err = mc.sleep(sleep); err != nil {
 			mc.log().Error("context 已取消，agent 隧道不再重连", "error", err, "fails", fails)
-			return nil, err
+			return err
 		}
 	}
 }
@@ -166,7 +175,7 @@ func (mc *muxerClient) openWebsocket(addr string, timeout time.Duration) (*smux.
 	defer cancel()
 
 	dialer := mc.cfg.Dialer
-	destURL := &url.URL{Scheme: "wss", Host: addr, Path: "/api/v1/tunnel"}
+	destURL := &url.URL{Scheme: "ws", Host: addr, Path: "/api/tunnel"}
 	strURL := destURL.String()
 	ws, _, err := dialer.DialContext(ctx, strURL, nil)
 	if err != nil {
@@ -174,10 +183,7 @@ func (mc *muxerClient) openWebsocket(addr string, timeout time.Duration) (*smux.
 	}
 
 	conn := ws.NetConn()
-	smuxCfg := smux.DefaultConfig()
-	smuxCfg.KeepAliveInterval = time.Minute
-	smuxCfg.KeepAliveTimeout = 30 * time.Second
-	sess, err := smux.Client(conn, smuxCfg)
+	sess, err := smux.Client(conn, nil)
 	if err != nil {
 		_ = conn.Close()
 		return nil, err
@@ -205,11 +211,11 @@ func (mc *muxerClient) sleep(d time.Duration) error {
 }
 
 func (mc *muxerClient) waitN(fails int, startAt time.Time) time.Duration {
-	if fails < 30 {
+	if fails <= 30 {
 		return 2 * time.Second
-	} else if fails < 100 {
+	} else if fails <= 100 {
 		return 5 * time.Second
-	} else if fails < 200 {
+	} else if fails <= 200 {
 		return 10 * time.Second
 	}
 
@@ -229,6 +235,13 @@ func (mc *muxerClient) authentication(sess *smux.Session, timeout time.Duration)
 	defer stm.Close()
 	_ = stm.SetDeadline(time.Now().Add(timeout))
 
+	req := mc.req
+	switch adt := sess.LocalAddr().(type) {
+	case *net.TCPAddr:
+		req.Inet = adt.IP.String()
+	case *net.UDPAddr:
+		req.Inet = adt.IP.String()
+	}
 	if err = mc.writeRequest(stm, mc.req); err != nil {
 		return nil, err
 	}

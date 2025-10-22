@@ -22,4 +22,5 @@
 *.log
 
 .ssoc-machine-id
+.SSOC_MACHINE_ID
 docs/.stoplight
