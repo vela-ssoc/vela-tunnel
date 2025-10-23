@@ -68,7 +68,7 @@ type muxerClient struct {
 func (mc *muxerClient) serve(ln net.Listener) {
 	const sleep = 3 * time.Second
 
-	// mc.opt.notifier.Connected() // 首次连接成功回调函数。
+	mc.opt.notifier.Connected() // 首次连接成功回调函数。
 
 	for {
 		srv := mc.opt.server
@@ -77,15 +77,15 @@ func (mc *muxerClient) serve(ln net.Listener) {
 
 		attrs := []any{slog.Any("error", err), slog.Duration("timeout", sleep)}
 		mc.log().Warn("agent 掉线了", attrs...)
-		// mc.opt.notifier.Disconnected(err) // 掉线回调函数。
+		mc.opt.notifier.Disconnected(err) // 掉线回调函数。
 
 		_ = mc.sleep(sleep)
 		err = mc.open()
 		if err != nil {
-			// mc.opt.notifier.Exited(err) // 退出回调函数。
+			mc.opt.notifier.Exited(err) // 退出回调函数。
 			break
 		}
-		// mc.opt.notifier.Reconnected() // 重连成功回调函数。
+		mc.opt.notifier.Reconnected() // 重连成功回调函数。
 	}
 }
 
