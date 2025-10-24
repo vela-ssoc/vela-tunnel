@@ -20,7 +20,7 @@ func TestTunnel(t *testing.T) {
 		Identifier(tunnel.NewIdent(""))
 
 	cfg := tunnel.Config{
-		Addresses: []string{"broker.example.com:8082", "broker.example.com:8083"},
+		Addresses: []string{"broker.example.com:8082", "127.0.0.1:8082"},
 		Semver:    "1.2.3-alpha",
 	}
 	mux, err := tunnel.Open(ctx, cfg, opt)

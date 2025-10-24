@@ -109,6 +109,7 @@ func (mc *muxerClient) open() error {
 		sess, resp, err := mc.connects(addrs, timeout)
 		if err == nil {
 			mc.mux.store(sess)
+			mc.log().Info("通道连接认证成功", attrs...)
 			return nil
 		}
 
@@ -175,7 +176,7 @@ func (mc *muxerClient) dial(addr string, timeout time.Duration) (*smux.Session, 
 	defer cancel()
 
 	dialer := mc.cfg.Dialer
-	destURL := &url.URL{Scheme: "ws", Host: addr, Path: "/api/tunnel"}
+	destURL := &url.URL{Scheme: "ws", Host: addr, Path: "/api/v1/tunnel"}
 	strURL := destURL.String()
 	ws, _, err := dialer.DialContext(ctx, strURL, nil)
 	if err != nil {
