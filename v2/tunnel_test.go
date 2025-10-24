@@ -2,7 +2,9 @@ package tunnel_test
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -22,29 +24,55 @@ func TestTunnel(t *testing.T) {
 	}
 	mux, err := tunnel.Open(ctx, cfg, opt)
 	if err != nil {
-		t.Log(err)
+		t.Errorf("连接通道时发生不可重试错误：%v", err)
 		return
 	}
+	t.Log("通道连接成功了")
 
-	go func() {
-		ticker := time.NewTicker(200 * time.Millisecond)
-		defer ticker.Stop()
+	// ------------------------[ 业务自定义层 ]---------------------------
 
-		var last bool
-		for range ticker.C {
-			closed := mux.IsClosed()
-			if closed != last {
-				last = closed
-				if closed {
-					t.Log("糟糕，通道掉线了。")
-				} else {
-					t.Log("太好了，通道重连成功了。")
+	// ⚠️ 这个 httpclient DialContext 会判断 host 如果是 broker.ssoc.internal 就走内部 tunnel，
+	// 否则就走公网网络，如果有隔离需求请自行隔离。
+	const internalHost = "broker.ssoc.internal"
+	systemDialer := new(net.Dialer)
+	multiHTTPClient := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				if host, _, _ := net.SplitHostPort(addr); host == internalHost {
+					return mux.OpenConn(ctx)
 				}
+
+				return systemDialer.DialContext(ctx, network, addr)
+			},
+		},
+	}
+
+	{
+		// 可以将该方法拿出来公用。
+		buildURL := func(path string) *url.URL {
+			return &url.URL{
+				Scheme: "http",
+				Host:   internalHost,
+				Path:   path,
 			}
 		}
-	}()
+		// 走 tunnel 通道调用 broker 的内部接口
+		// ⚠️ 协议一定要是 http 或 ws，
+		// ⚠️ host 一定要和 httpclient 的 DialContext 判断一致。
+		reqURL := buildURL("/foo/bar")
+		resp, _ := multiHTTPClient.Get(reqURL.String())
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}
+	{
+		// 向外部发送 http 请求。
+		resp, _ := multiHTTPClient.Get("https://example.com/foo/bar")
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}
 
-	_ = mux
 	time.Sleep(time.Hour)
 }
 
