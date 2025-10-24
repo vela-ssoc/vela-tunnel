@@ -95,22 +95,34 @@ func (mc *muxerClient) open() error {
 	}
 
 	var fails int
-	startAt := time.Now()
+	beginAt := time.Now()
 	const timeout = 10 * time.Second
 	addrs := mc.cfg.Addresses
+	mc.log().Info("开始建立通信通道", "addresses", addrs)
 
 	for {
-		sess, _, err := mc.connects(addrs, timeout)
+		attrs := []any{
+			slog.Time("begin_at", beginAt),
+			slog.Any("addresses", addrs),
+			slog.Duration("timeout", timeout),
+		}
+		sess, resp, err := mc.connects(addrs, timeout)
 		if err == nil {
 			mc.mux.store(sess)
 			return nil
 		}
 
 		fails++
-		sleep := mc.waitN(fails, startAt)
-		mc.log().Warn("通道连接认证失败", "error", err, "sleep", sleep, "fails", fails, "addresses", addrs)
+		sleep := mc.waitN(fails, beginAt)
+		attrs = append(attrs, slog.Any("fails", fails), slog.Duration("sleep", sleep), slog.Any("error", err))
+		if resp != nil {
+			attrs = append(attrs, slog.Any("auth_response", resp))
+		}
+
+		mc.log().Warn("通道连接或认证失败", attrs...)
 		if err = mc.sleep(sleep); err != nil {
-			mc.log().Error("context 已取消，agent 隧道不再重连", "error", err, "fails", fails)
+			attrs = append(attrs, slog.Any("sleep_error", err))
+			mc.log().Error("context 已取消，agent 隧道不再重连", attrs...)
 			return err
 		}
 	}
@@ -119,36 +131,25 @@ func (mc *muxerClient) open() error {
 func (mc *muxerClient) connects(addrs []string, timeout time.Duration) (*smux.Session, *authResponse, error) {
 	var errs []error
 	for _, addr := range addrs {
-		attrs := []any{slog.String("addr", addr), slog.Duration("timeout", timeout)}
-		// 通过 websocket 拿到底层连接，并包装为 smux。
-		sess, err := mc.openWebsocket(addr, timeout)
+		sess, err := mc.dial(addr, timeout) // 通过 websocket 打开底层连接。
 		if err != nil {
 			errs = append(errs, err)
-			attrs = append(attrs, slog.Any("error", err))
-			mc.log().Warn("基础网络连接失败", attrs...)
 			continue
 		}
 
 		resp, err1 := mc.authentication(sess, timeout)
 		if err1 != nil {
 			_ = sess.Close()
-			errs = append(errs, err1)
-			attrs = append(attrs, slog.Any("error", err1))
-			mc.log().Warn("认证请求响应错误", attrs...)
 			continue
 		}
 
-		attrs = append(attrs, slog.Any("agent_auth_response", resp))
 		err2 := resp.checkError()
 		if err2 == nil {
-			mc.log().Info("通道连接认证成功", attrs...)
 			return sess, resp, nil
 		}
 
 		_ = sess.Close()
 		errs = append(errs, err2)
-		attrs = append(attrs, slog.Any("error", err2))
-		mc.log().Warn("认证失败", attrs...)
 
 		if resp.duplicate() && !mc.rebuild {
 			mc.rebuild = true
@@ -157,12 +158,11 @@ func (mc *muxerClient) connects(addrs []string, timeout time.Duration) (*smux.Se
 			mc.log().Warn("当前机器码已经重复在线，准备 rebuild 机器码")
 			after := mc.opt.ident.MachineID(true)
 			mc.req.MachineID = after
-			attrs = append(attrs, slog.String("before_machine_id", before), slog.String("after_machine_id", after))
 
 			if before == after {
-				mc.log().Info("前后机器码生成一致", attrs...)
+				mc.log().Info("前后机器码生成一致")
 			} else {
-				mc.log().Warn("生成了新的机器码", attrs...)
+				mc.log().Warn("生成了新的机器码")
 			}
 		}
 	}
@@ -170,7 +170,7 @@ func (mc *muxerClient) connects(addrs []string, timeout time.Duration) (*smux.Se
 	return nil, nil, errors.Join(errs...)
 }
 
-func (mc *muxerClient) openWebsocket(addr string, timeout time.Duration) (*smux.Session, error) {
+func (mc *muxerClient) dial(addr string, timeout time.Duration) (*smux.Session, error) {
 	ctx, cancel := context.WithTimeout(mc.ctx, timeout)
 	defer cancel()
 
