@@ -2,22 +2,19 @@ package tunnel_test
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"testing"
 	"time"
 
-	tunnel "github.com/vela-ssoc/vela-tunnel/v2"
+	"github.com/vela-ssoc/vela-tunnel/v2"
 )
 
 func TestTunnel(t *testing.T) {
-	srv := &http.Server{}
-
 	ctx := context.Background()
 	opt := tunnel.NewOption().
-		Logger(slog.Default()).
-		Server(srv).
-		Identifier(tunnel.NewIdent(""))
+		Server(yourHTTPServer()).        // 业务服务器（HTTP 服务）
+		Identifier(tunnel.NewIdent("")). // 机器码生成器
+		Notifier(&connectNotifier{t: t}) // 通道状态变化通知
 
 	cfg := tunnel.Config{
 		Addresses: []string{"broker.example.com:8082", "127.0.0.1:8082"},
@@ -49,4 +46,36 @@ func TestTunnel(t *testing.T) {
 
 	_ = mux
 	time.Sleep(time.Hour)
+}
+
+func yourHTTPServer() tunnel.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1/path/to/router", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("处理成功"))
+	})
+
+	return &http.Server{
+		Handler: mux,
+	}
+}
+
+type connectNotifier struct {
+	t *testing.T
+}
+
+func (c *connectNotifier) Connected() {
+	c.t.Log("agent 首次连接上线成功")
+}
+
+func (c *connectNotifier) Disconnected(err error) {
+	c.t.Logf("agent 掉线了: %v", err)
+}
+
+func (c *connectNotifier) Reconnected() {
+	c.t.Log("agent 重连成功了")
+}
+
+func (c *connectNotifier) Exited(err error) {
+	c.t.Errorf("【严重】agent 退出不再尝试重连: %v", err)
 }

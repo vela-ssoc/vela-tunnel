@@ -91,6 +91,14 @@ func (ob OptionBuilder) Server(v Server) OptionBuilder {
 	return ob
 }
 
+func (ob OptionBuilder) Notifier(v ConnectNotifier) OptionBuilder {
+	ob.opts = append(ob.opts, func(o option) option {
+		o.notifier = v
+		return o
+	})
+	return ob
+}
+
 func (ob OptionBuilder) options() []func(option) option {
 	return ob.opts
 }
