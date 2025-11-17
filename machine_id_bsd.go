@@ -40,3 +40,7 @@ func readKenv() (string, error) {
 	}
 	return trim(buf.String()), nil
 }
+
+func virtualNetworks() map[string]bool {
+	return make(map[string]bool)
+}

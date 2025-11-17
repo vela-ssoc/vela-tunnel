@@ -26,3 +26,7 @@ func machineID() (string, error) {
 
 	return trim(string(id)), nil
 }
+
+func virtualNetworks() map[string]bool {
+	return make(map[string]bool)
+}

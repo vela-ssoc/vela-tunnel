@@ -51,12 +51,21 @@ func (g machineIDGenerate) generate() string {
 }
 
 func (g machineIDGenerate) networks() string {
+	virtuals := virtualNetworks()
+	if virtuals == nil {
+		virtuals = make(map[string]bool)
+	}
 	faces, _ := net.Interfaces()
 	cards := make(nics, 0, len(faces))
 	for _, face := range faces {
 		// 跳过换回网卡和未启用的网卡
 		if face.Flags&net.FlagUp == 0 ||
 			face.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+
+		// 虚拟网卡经常变化，不纳入计算因子。
+		if virtuals[face.Name] {
 			continue
 		}
 
@@ -81,21 +90,17 @@ func (g machineIDGenerate) networks() string {
 				continue
 			}
 
+			// 仅统计 IPv4 不统计 IPv6。
+			// 因为现实使用中往往 IPv6 地址变化性更强。
 			if ip4 := ip.To4(); ip4 != nil {
 				ips = append(ips, ip.String())
-			} else if ip.To16() != nil {
-				// 排除 IPv6 链路本地地址（fe80::/10），如不需要可移除此条件
-				if ip.IsLinkLocalUnicast() {
-					continue
-				}
-				ips = append(ips, ip.String())
 			}
-			if len(ips) != 0 {
-				cards = append(cards, &nic{
-					MAC:   face.HardwareAddr.String(),
-					Inets: ips,
-				})
-			}
+		}
+		if len(ips) != 0 {
+			cards = append(cards, &nic{
+				MAC:   face.HardwareAddr.String(),
+				Inets: ips,
+			})
 		}
 	}
 	cards.sort()

@@ -35,3 +35,7 @@ func extractID(lines string) (string, error) {
 	}
 	return "", fmt.Errorf("Failed to extract 'IOPlatformUUID' value from `ioreg` output.\n%s", lines)
 }
+
+func virtualNetworks() map[string]bool {
+	return make(map[string]bool)
+}
