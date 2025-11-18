@@ -69,6 +69,22 @@ func (g machineIDGenerate) networks() string {
 			continue
 		}
 
+		// 一些虚拟网卡是没有 MAC 地址的
+		if len(face.HardwareAddr) == 0 {
+			continue
+		}
+
+		zeroMAC := true
+		for _, b := range face.HardwareAddr {
+			if b != 0 {
+				zeroMAC = false
+				break
+			}
+		}
+		if zeroMAC {
+			continue
+		}
+
 		var ips []string
 		addrs, _ := face.Addrs()
 		for _, addr := range addrs {
