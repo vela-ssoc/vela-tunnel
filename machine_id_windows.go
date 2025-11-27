@@ -35,11 +35,10 @@ func virtualNetworks() map[string]bool {
 		"VMware Virtual Ethernet Adapter",       // VMware
 		"TAP-Windows Adapter",                   // OpenVPN/WireGuard
 		"VirtualBox Host-Only Ethernet Adapter", // VirtualBox
-		//"Hyper-V Virtual Ethernet Adapter",      // Hyper-V
+		"Hyper-V Virtual Ethernet Adapter",      // Hyper-V
 		// FIXME 在安装 Hyper-V 虚拟机或启用了 WSL 环境时，会出现 Hyper-V 类型的虚拟网卡，
 		//  我自测 Windows Server 安装了 Hyper-V 虚拟机，会创建一个 vSwitch，然后其他本机
-		//  网卡会虚拟出来接入到 vSwitch 中。如果把 Hyper-V 虚拟网卡排除，就会导致无有效的网
-		//  卡了，所以暂且不排除 Hyper-V 虚拟网卡。
+		//  网卡会虚拟出来接入到 vSwitch 中。如果把 Hyper-V 虚拟网卡排除，就会导致无有效的网卡。
 	}
 
 	addrs, _ := adapterAddresses()
