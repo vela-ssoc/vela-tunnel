@@ -109,6 +109,13 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
 			continue
 		}
+		if len(hw) > 0 && (hw[0]&0x02) != 0 {
+			// Locally administered address bit.
+			// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
+			dnd.getLog().Infof("跳过疑似虚拟网卡 " + name)
+			continue
+		}
+
 		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
 			dnd.getLog().Infof("跳过无 IPv4 地址的网卡 " + name)
 			continue
