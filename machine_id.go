@@ -115,7 +115,7 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 		}
 
 		// 排除虚拟网卡
-		if _, yes := virtuals[name]; yes {
+		if yes := virtuals[name]; yes {
 			dnd.getLog().Infof("跳过虚拟网卡 " + name)
 			continue
 		}
