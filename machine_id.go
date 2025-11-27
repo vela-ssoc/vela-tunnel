@@ -8,8 +8,144 @@ import (
 	"os"
 	"os/exec"
 	"slices"
+	"sort"
 	"strings"
 )
+
+func NewIdent(file string, log Logger) Identifier {
+	return &defaultNodeID{
+		file: file,
+		log:  log,
+	}
+}
+
+type defaultNodeID struct {
+	file string
+	log  Logger
+}
+
+func (dnd *defaultNodeID) MachineID(rebuild bool) string {
+	if !rebuild {
+		dnd.getLog().Infof("准备从缓存中加载机器码")
+		if mid := dnd.readFile(); mid != "" {
+			dnd.getLog().Infof("从缓存中读取到了机器码 " + mid)
+			return mid
+		}
+		dnd.getLog().Warnf("从缓存中未找到机器码")
+	}
+
+	dnd.getLog().Warnf("准备计算机器码")
+	hostid, _ := machineID()
+	hostname, _ := os.Hostname()
+	macs := dnd.hardwareAddrs()
+	smac := strings.Join(macs, ",")
+	dnd.getLog().Infof("得到设备信息 hostid=" + hostid + ", hostname=" + hostname + ", mac=" + smac)
+
+	input := strings.Join([]string{hostid, hostname, smac}, "-")
+	sum := sha1.Sum([]byte(input))
+	mid := hex.EncodeToString(sum[:])
+	dnd.writeFile(mid) // 缓存机器码
+	dnd.getLog().Infof("计算得到的机器码为 " + mid)
+
+	return mid
+}
+
+func (dnd *defaultNodeID) readFile() string {
+	if dnd.file == "" {
+		return ""
+	}
+	dat, _ := os.ReadFile(dnd.file)
+
+	return string(dat)
+}
+
+func (dnd *defaultNodeID) writeFile(mid string) {
+	if dnd.file != "" {
+		_ = os.WriteFile(dnd.file, []byte(mid), 0o600)
+	}
+}
+
+func (dnd *defaultNodeID) getLog() Logger {
+	if dnd.log != nil {
+		return dnd.log
+	}
+
+	return new(stdLog)
+}
+
+func (dnd *defaultNodeID) hardwareAddrs() []string {
+	uniq := make(map[string]struct{}, 8)
+	macs := make([]string, 0, 8)
+	faces, _ := net.Interfaces()
+	virtuals := virtualNetworks()
+	for _, face := range faces {
+		name := face.Name
+		flags := face.Flags
+		if (flags & net.FlagUp) == 0 {
+			dnd.getLog().Infof("跳过未启用的网卡 " + name)
+			continue
+		}
+		if (flags & net.FlagLoopback) != 0 {
+			dnd.getLog().Infof("跳过环回网卡 " + name)
+			continue
+		}
+		if (flags & net.FlagPointToPoint) != 0 {
+			dnd.getLog().Infof("跳过点对点网卡 " + name)
+			continue
+		}
+		hw := face.HardwareAddr
+		if len(hw) == 0 {
+			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
+			continue
+		}
+		zero := true
+		for _, b := range hw {
+			if b != 0 {
+				zero = false
+				break
+			}
+		}
+		if zero {
+			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
+			continue
+		}
+		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
+			dnd.getLog().Infof("跳过无 IPv4 地址的网卡 " + name)
+			continue
+		}
+
+		// 排除虚拟网卡
+		if _, yes := virtuals[name]; yes {
+			dnd.getLog().Infof("跳过虚拟网卡 " + name)
+			continue
+		}
+
+		dnd.getLog().Infof("有效的网卡 " + name + " Flag=" + flags.String())
+		mac := hw.String()
+		if _, exists := uniq[mac]; !exists {
+			uniq[mac] = struct{}{}
+			macs = append(macs, mac)
+		}
+	}
+	sort.Strings(macs)
+
+	return macs
+}
+
+func (dnd *defaultNodeID) withoutIPv4(addrs []net.Addr) bool {
+	for _, addr := range addrs {
+		inet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := inet.IP.To4()
+		if ip != nil {
+			return false
+		}
+	}
+
+	return true
+}
 
 func NewMachineID(cachefile string) Identifier {
 	return machineIDGenerate{
@@ -34,13 +170,15 @@ func (g machineIDGenerate) MachineID(rebuild bool) string {
 func (g machineIDGenerate) generateAndSaveCache() string {
 	mid := g.generate()
 	if f := g.cachefile; f != "" {
-		_ = os.WriteFile(f, []byte(mid), 0644)
+		_ = os.WriteFile(f, []byte(mid), 0o644)
 	}
 
 	return mid
 }
 
 func (g machineIDGenerate) generate() string {
+	// sha1(hostid-hostname-macs)
+
 	mid, _ := machineID()
 	hostname, _ := os.Hostname()
 	card := g.networks()
