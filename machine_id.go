@@ -7,16 +7,17 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"slices"
 	"sort"
 	"strings"
 )
 
-func NewIdent(file string, log Logger) Identifier {
-	return &defaultNodeID{
-		file: file,
-		log:  log,
+func NewMachineID(file string, log ...Logger) Identifier {
+	dnd := &defaultNodeID{file: file}
+	if len(log) > 0 {
+		dnd.log = log[0]
 	}
+
+	return dnd
 }
 
 type defaultNodeID struct {
@@ -70,7 +71,7 @@ func (dnd *defaultNodeID) getLog() Logger {
 		return dnd.log
 	}
 
-	return new(stdLog)
+	return new(discordLog)
 }
 
 func (dnd *defaultNodeID) hardwareAddrs() []string {
@@ -98,14 +99,13 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
 			continue
 		}
-		zero := true
+		zeroMAC := true
 		for _, b := range hw {
-			if b != 0 {
-				zero = false
+			if zeroMAC = b != 0; !zeroMAC {
 				break
 			}
 		}
-		if zero {
+		if zeroMAC {
 			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
 			continue
 		}
@@ -156,150 +156,6 @@ func (dnd *defaultNodeID) withoutIPv4(addrs []net.Addr) bool {
 	}
 
 	return true
-}
-
-func NewMachineID(cachefile string) Identifier {
-	return machineIDGenerate{
-		cachefile: cachefile,
-	}
-}
-
-type machineIDGenerate struct {
-	cachefile string
-}
-
-func (g machineIDGenerate) MachineID(rebuild bool) string {
-	if f := g.cachefile; f != "" && !rebuild {
-		if raw, _ := os.ReadFile(f); len(raw) != 0 {
-			return string(raw)
-		}
-	}
-
-	return g.generateAndSaveCache()
-}
-
-func (g machineIDGenerate) generateAndSaveCache() string {
-	mid := g.generate()
-	if f := g.cachefile; f != "" {
-		_ = os.WriteFile(f, []byte(mid), 0o644)
-	}
-
-	return mid
-}
-
-func (g machineIDGenerate) generate() string {
-	// sha1(hostid-hostname-macs)
-
-	mid, _ := machineID()
-	hostname, _ := os.Hostname()
-	card := g.networks()
-	str := strings.Join([]string{mid, hostname, card}, ",")
-	sum := sha1.Sum([]byte(str))
-
-	return hex.EncodeToString(sum[:])
-}
-
-func (g machineIDGenerate) networks() string {
-	virtuals := virtualNetworks()
-	if virtuals == nil {
-		virtuals = make(map[string]bool)
-	}
-	faces, _ := net.Interfaces()
-	cards := make(nics, 0, len(faces))
-	for _, face := range faces {
-		// 跳过换回网卡和未启用的网卡
-		if face.Flags&net.FlagUp == 0 ||
-			face.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-
-		// 虚拟网卡经常变化，不纳入计算因子。
-		if virtuals[face.Name] {
-			continue
-		}
-
-		// 一些虚拟网卡是没有 MAC 地址的
-		if len(face.HardwareAddr) == 0 {
-			continue
-		}
-
-		zeroMAC := true
-		for _, b := range face.HardwareAddr {
-			if b != 0 {
-				zeroMAC = false
-				break
-			}
-		}
-		if zeroMAC {
-			continue
-		}
-
-		var ips []string
-		addrs, _ := face.Addrs()
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			default:
-				continue
-			}
-
-			// 过滤无效地址
-			if ip == nil ||
-				ip.IsLoopback() ||
-				ip.IsMulticast() ||
-				ip.IsUnspecified() {
-				continue
-			}
-
-			// 仅统计 IPv4 不统计 IPv6。
-			// 因为现实使用中往往 IPv6 地址变化性更强。
-			if ip4 := ip.To4(); ip4 != nil {
-				ips = append(ips, ip.String())
-			}
-		}
-		if len(ips) != 0 {
-			cards = append(cards, &nic{
-				MAC:   face.HardwareAddr.String(),
-				Inets: ips,
-			})
-		}
-	}
-	cards.sort()
-
-	return cards.join()
-}
-
-type nic struct {
-	MAC   string
-	Inets []string
-}
-
-type nics []*nic
-
-func (ns nics) sort() {
-	slices.SortFunc(ns, func(a, b *nic) int {
-		return strings.Compare(a.MAC, b.MAC)
-	})
-	for _, n := range ns {
-		slices.Sort(n.Inets)
-	}
-}
-
-func (ns nics) join() string {
-	strs := make([]string, 0, len(ns))
-	for _, n := range ns {
-		ele := make([]string, 0, len(n.Inets)+1)
-		ele = append(ele, n.MAC)
-		ele = append(ele, n.Inets...)
-		line := strings.Join(ele, ",")
-		strs = append(strs, line)
-	}
-
-	return strings.Join(strs, ",")
 }
 
 // run wraps `exec.Command` with easy access to stdout and stderr.
