@@ -109,11 +109,15 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
 			continue
 		}
+		// Locally administered address bit.
+		// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
 		if len(hw) > 0 && (hw[0]&0x02) != 0 {
-			// Locally administered address bit.
-			// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
-			dnd.getLog().Infof("跳过疑似虚拟网卡 " + name)
-			continue
+			if strings.HasPrefix(name, "docker") || // Docker
+				strings.HasPrefix(name, "llw") || // Low-Latency Wireless
+				strings.HasPrefix(name, "awdl") { // Apple Wireless Direct Link (AWDL)
+				dnd.getLog().Infof("跳过疑似虚拟网卡 " + name)
+				continue
+			}
 		}
 
 		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
