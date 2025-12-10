@@ -2,5 +2,5 @@ github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aN
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20251117062119-37ccc5c8527f h1:nwtIOGcL5puVqXgEzSjhj1+xdITg9CLD6ENN7WakNY4=
 github.com/vela-ssoc/vela-common-mba v0.0.0-20251117062119-37ccc5c8527f/go.mod h1:DMN/az9fN2p0mJ1CNouJjsEJWs69Ucqbtq34DOCaTlc=
-golang.org/x/sys v0.38.0 h1:3yZWxaJjBmCWXqhN1qh02AkOnCQ1poK6oF+a7xWL6Gc=
-golang.org/x/sys v0.38.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+golang.org/x/sys v0.39.0 h1:CvCKL8MeisomCi6qNZ+wbb0DN9E5AATixKsvNtMoMFk=
+golang.org/x/sys v0.39.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=

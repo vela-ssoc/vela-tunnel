@@ -101,23 +101,27 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 		}
 		zeroMAC := true
 		for _, b := range hw {
-			if zeroMAC = b != 0; !zeroMAC {
+			if b != 0 {
+				zeroMAC = false
 				break
 			}
 		}
 		if zeroMAC {
-			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
+			dnd.getLog().Infof("跳过 MAC 地址无效的网卡 " + name + " mac: " + hw.String())
 			continue
 		}
 		// Locally administered address bit.
 		// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
+		if (hw[0] & 0x02) != 0 {
+			dnd.getLog().Infof(name + " 网卡疑似虚拟设备，待进一步判定 ...")
+		}
 		if len(hw) > 0 && (hw[0]&0x02) != 0 {
-			if strings.HasPrefix(name, "docker") || // Docker
-				strings.HasPrefix(name, "llw") || // Low-Latency Wireless
-				strings.HasPrefix(name, "awdl") { // Apple Wireless Direct Link (AWDL)
-				dnd.getLog().Infof("跳过疑似虚拟网卡 " + name)
+			if dnd.isVirtualName(name) {
+				dnd.getLog().Warnf(name + " 网卡判定为虚拟网卡设备，不采用。")
 				continue
 			}
+
+			dnd.getLog().Infof(name + " 网卡判定为可用设备。")
 		}
 
 		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
@@ -138,6 +142,9 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			macs = append(macs, mac)
 		}
 	}
+	if len(macs) == 0 {
+		dnd.getLog().Warnf("没有找到有效的网卡")
+	}
 	sort.Strings(macs)
 
 	return macs
@@ -156,6 +163,12 @@ func (dnd *defaultNodeID) withoutIPv4(addrs []net.Addr) bool {
 	}
 
 	return true
+}
+
+func (dnd *defaultNodeID) isVirtualName(name string) bool {
+	return strings.HasPrefix(name, "docker") ||
+		strings.HasPrefix(name, "llw") ||
+		strings.HasPrefix(name, "awdl")
 }
 
 // run wraps `exec.Command` with easy access to stdout and stderr.
