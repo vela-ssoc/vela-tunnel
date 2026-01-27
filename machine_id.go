@@ -37,12 +37,11 @@ func (dnd *defaultNodeID) MachineID(rebuild bool) string {
 
 	dnd.getLog().Warnf("准备计算机器码")
 	hostid, _ := machineID()
-	hostname, _ := os.Hostname()
 	macs := dnd.hardwareAddrs()
 	smac := strings.Join(macs, ",")
-	dnd.getLog().Infof("得到设备信息 hostid=" + hostid + ", hostname=" + hostname + ", mac=" + smac)
+	dnd.getLog().Infof("得到设备信息 hostid=" + hostid + ", mac=" + smac)
 
-	input := strings.Join([]string{hostid, hostname, smac}, "-")
+	input := strings.Join([]string{hostid, smac}, "-")
 	sum := sha1.Sum([]byte(input))
 	mid := hex.EncodeToString(sum[:])
 	dnd.writeFile(mid) // 缓存机器码
@@ -110,12 +109,14 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			dnd.getLog().Infof("跳过 MAC 地址无效的网卡 " + name + " mac: " + hw.String())
 			continue
 		}
+		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
+			dnd.getLog().Infof(name + " 跳过没有 IPv4 地址的网卡")
+			continue
+		}
+
 		// Locally administered address bit.
 		// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
 		if (hw[0] & 0x02) != 0 {
-			dnd.getLog().Infof(name + " 网卡疑似虚拟设备，待进一步判定 ...")
-		}
-		if len(hw) > 0 && (hw[0]&0x02) != 0 {
 			if dnd.isVirtualName(name) {
 				dnd.getLog().Warnf(name + " 网卡判定为虚拟网卡设备，不采用。")
 				continue
@@ -123,12 +124,6 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 
 			dnd.getLog().Infof(name + " 网卡判定为可用设备。")
 		}
-
-		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
-			dnd.getLog().Infof("跳过无 IPv4 地址的网卡 " + name)
-			continue
-		}
-
 		// 排除虚拟网卡
 		if yes := virtuals[name]; yes {
 			dnd.getLog().Infof("跳过虚拟网卡 " + name)
