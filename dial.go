@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -88,7 +89,7 @@ func (dl *iterDial) toAddrs(addrs []string, servername string) Addresses {
 	ssls := make(map[string]struct{}, size)
 
 	for _, addr := range addrs {
-		host, port := dl.splitHP(addr)
+		host, port := splitHostPort(addr)
 		sport, tport := port, port
 		if port == "" {
 			sport, tport = "443", "80"
@@ -109,15 +110,22 @@ func (dl *iterDial) toAddrs(addrs []string, servername string) Addresses {
 	return ret
 }
 
-// splitHP 分割出主机和端口号
-func (*iterDial) splitHP(hp string) (string, string) {
-	if u, _ := url.Parse(hp); u != nil && u.Scheme != "" {
-		hp = u.Host
+// splitHostPort 分割出主机和端口号
+func splitHostPort(addr string) (string, string) {
+	if !strings.Contains(addr, "://") {
+		addr = "dummy://" + addr
 	}
 
-	if host, port, err := net.SplitHostPort(hp); err == nil {
-		return host, port
+	pu, err := url.Parse(addr)
+	if err != nil {
+		return addr, ""
 	}
 
-	return hp, ""
+	host, port, _ := net.SplitHostPort(pu.Host)
+	if host == "" {
+		// 没有 port 的情况，去掉 IPv6 方括号
+		host = strings.TrimSuffix(strings.TrimPrefix(pu.Host, "["), "]")
+	}
+
+	return host, port
 }
