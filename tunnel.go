@@ -246,6 +246,7 @@ func (bt *borerTunnel) initIdent(hide definition.MHide) Ident {
 		Unload:     hide.Unload,
 		Unstable:   hide.Unstable,
 		Customized: hide.Customized,
+		Args:       os.Args,
 	}
 	if ident.Goos == "" {
 		ident.Goos = runtime.GOOS
