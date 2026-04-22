@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 type Attachment struct {
@@ -52,6 +54,14 @@ func (att *Attachment) ThirdInfo() ThirdInfo {
 // NotModified 文件未发生变化
 func (att *Attachment) NotModified() bool {
 	return att.code == http.StatusNotModified
+}
+
+// ZipFile 判断文件是否是 zip 文件。
+//
+// Deprecated: 调用者可自行判断文件类型。
+func (att *Attachment) ZipFile() bool {
+	ext := filepath.Ext(att.Filename())
+	return strings.ToLower(ext) == ".zip"
 }
 
 func (att *Attachment) WriteTo(w io.Writer) (int64, error) {
