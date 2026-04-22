@@ -17,6 +17,10 @@ func ReadHide(filename ...string) (definition.MHide, error) {
 	}
 
 	var hide definition.MHide
+	if err := ReadManifest(name, &hide); err == nil {
+		return hide, nil
+	}
+
 	err := ciphertext.DecryptFile(name, &hide)
 
 	return hide, err
