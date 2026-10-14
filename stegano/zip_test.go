@@ -41,7 +41,7 @@ func TestAddManifest(t *testing.T) {
 		},
 	}
 
-	if err = AddManifest(dst, manifest, offset); err != nil {
+	if err = AppendTo(dst, manifest, offset); err != nil {
 		t.Fatal(err)
 	}
 
