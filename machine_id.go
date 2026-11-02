@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"io"
+	"log/slog"
 	"net"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 	"strings"
 )
 
-func NewMachineID(file string, log ...Logger) Identifier {
+func NewMachineID(file string, log ...*slog.Logger) Identifier {
 	dnd := &defaultNodeID{file: file}
 	if len(log) > 0 {
 		dnd.log = log[0]
@@ -22,30 +23,34 @@ func NewMachineID(file string, log ...Logger) Identifier {
 
 type defaultNodeID struct {
 	file string
-	log  Logger
+	log  *slog.Logger
 }
 
 func (dnd *defaultNodeID) MachineID(rebuild bool) string {
 	if !rebuild {
-		dnd.getLog().Infof("准备从缓存中加载机器码")
+		dnd.getLog().Info("准备从缓存中加载机器码")
 		if mid := dnd.readFile(); mid != "" {
-			dnd.getLog().Infof("从缓存中读取到了机器码 " + mid)
+			dnd.getLog().Info("从缓存中读取到了机器码", "machine_id", mid)
 			return mid
 		}
-		dnd.getLog().Warnf("从缓存中未找到机器码")
+		dnd.getLog().Warn("从缓存中未找到机器码")
 	}
 
-	dnd.getLog().Warnf("准备计算机器码")
+	dnd.getLog().Warn("准备计算机器码")
 	hostid, _ := machineID()
 	macs := dnd.hardwareAddrs()
 	smac := strings.Join(macs, ",")
-	dnd.getLog().Infof("得到设备信息 hostid=" + hostid + ", mac=" + smac)
+
+	args := []any{"mac", smac, "hostid", hostid}
+	dnd.getLog().Info("得到设备信息", args...)
 
 	input := strings.Join([]string{hostid, smac}, "-")
 	sum := sha1.Sum([]byte(input))
 	mid := hex.EncodeToString(sum[:])
 	dnd.writeFile(mid) // 缓存机器码
-	dnd.getLog().Infof("计算得到的机器码为 " + mid)
+
+	args = append(args, "machine_id", mid)
+	dnd.getLog().Info("计算得到的机器码", args...)
 
 	return mid
 }
@@ -65,12 +70,12 @@ func (dnd *defaultNodeID) writeFile(mid string) {
 	}
 }
 
-func (dnd *defaultNodeID) getLog() Logger {
+func (dnd *defaultNodeID) getLog() *slog.Logger {
 	if dnd.log != nil {
 		return dnd.log
 	}
 
-	return new(discordLog)
+	return slog.Default()
 }
 
 func (dnd *defaultNodeID) hardwareAddrs() []string {
@@ -81,21 +86,22 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 	for _, face := range faces {
 		name := face.Name
 		flags := face.Flags
+		args := []any{"name", name}
 		if (flags & net.FlagUp) == 0 {
-			dnd.getLog().Infof("跳过未启用的网卡 " + name)
+			dnd.getLog().Info("跳过未启用的网卡", args...)
 			continue
 		}
 		if (flags & net.FlagLoopback) != 0 {
-			dnd.getLog().Infof("跳过环回网卡 " + name)
+			dnd.getLog().Info("跳过环回网卡", args...)
 			continue
 		}
 		if (flags & net.FlagPointToPoint) != 0 {
-			dnd.getLog().Infof("跳过点对点网卡 " + name)
+			dnd.getLog().Info("跳过点对点网卡", args...)
 			continue
 		}
 		hw := face.HardwareAddr
 		if len(hw) == 0 {
-			dnd.getLog().Infof("跳过无 MAC 地址的网卡 " + name)
+			dnd.getLog().Info("跳过无 MAC 地址的网卡", args...)
 			continue
 		}
 		zeroMAC := true
@@ -106,11 +112,12 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 			}
 		}
 		if zeroMAC {
-			dnd.getLog().Infof("跳过 MAC 地址无效的网卡 " + name + " mac: " + hw.String())
+			args = append(args, "mac", hw.String())
+			dnd.getLog().Info("跳过 MAC 地址无效的网卡", args...)
 			continue
 		}
 		if addrs, _ := face.Addrs(); dnd.withoutIPv4(addrs) {
-			dnd.getLog().Infof(name + " 跳过没有 IPv4 地址的网卡")
+			dnd.getLog().Info("跳过没有 IPv4 地址的网卡", args...)
 			continue
 		}
 
@@ -118,19 +125,20 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 		// https://standards.ieee.org/wp-content/uploads/import/documents/tutorials/macgrp.pdf
 		if (hw[0] & 0x02) != 0 {
 			if dnd.isVirtualName(name) {
-				dnd.getLog().Warnf(name + " 网卡判定为虚拟网卡设备，不采用。")
+				dnd.getLog().Warn("网卡判定为虚拟网卡设备，不采用", args...)
 				continue
 			}
 
-			dnd.getLog().Infof(name + " 网卡判定为可用设备。")
+			dnd.getLog().Info("网卡判定为可用设备", args...)
 		}
 		// 排除虚拟网卡
 		if yes := virtuals[name]; yes {
-			dnd.getLog().Infof("跳过虚拟网卡 " + name)
+			dnd.getLog().Info("跳过虚拟网卡", args...)
 			continue
 		}
 
-		dnd.getLog().Infof("有效的网卡 " + name + " Flag=" + flags.String())
+		args = append(args, "flag", flags.String())
+		dnd.getLog().Info("有效的网卡", args...)
 		mac := hw.String()
 		if _, exists := uniq[mac]; !exists {
 			uniq[mac] = struct{}{}
@@ -138,7 +146,7 @@ func (dnd *defaultNodeID) hardwareAddrs() []string {
 		}
 	}
 	if len(macs) == 0 {
-		dnd.getLog().Warnf("没有找到有效的网卡")
+		dnd.getLog().Warn("没有找到有效的网卡")
 	}
 	sort.Strings(macs)
 
