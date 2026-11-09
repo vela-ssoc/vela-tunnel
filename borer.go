@@ -290,6 +290,11 @@ func (bt *borerTunnel) dial() error {
 			bt.issue, bt.brkAddr = issue, addr
 			bt.laddr, bt.raddr = conn.LocalAddr(), conn.RemoteAddr()
 			cfg := smux.DefaultConfig()
+
+			// V3 版本新增字段，用于兼容线上旧版本 Agent。
+			bt.ident.Keepalive = true
+			cfg.KeepAliveDisabled = false
+
 			cfg.Passwd = issue.Passwd
 			bt.muxer = smux.Client(conn, cfg)
 			bt.slog.Infof("连接 broker(%s) 成功", addr)
