@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/vela-ssoc/vela-common-mba/smux"
+	"github.com/vela-ssoc/vela-tunnel/legacy/smux"
 	"golang.org/x/time/rate"
 )
 
@@ -47,7 +47,7 @@ func (m *velaSession) SetLimit(bps rate.Limit) bool { return m.limiter.SetLimit(
 func (m *velaSession) NumStreams() (int64, int64)   { return m.stats.numStreams() }
 func (m *velaSession) Traffic() (uint64, uint64)    { return m.stats.mux.load() }
 func (m *velaSession) Library() (string, string) {
-	return "vela", "github.com/vela-ssoc/vela-common-mba/smux"
+	return "vela", "github.com/vela-ssoc/vela-tunnel"
 }
 func (m *velaSession) Streams() []Streamer    { return m.stats.actives() }
 func (m *velaSession) ConnectedAt() time.Time { return m.connAt }

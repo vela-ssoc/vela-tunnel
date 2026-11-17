@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/vela-ssoc/vela-common-mba/smux"
+	"github.com/vela-ssoc/vela-tunnel/legacy/smux"
 )
 
 type velaConn struct {

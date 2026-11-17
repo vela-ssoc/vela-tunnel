@@ -21,8 +21,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
-	"github.com/vela-ssoc/vela-common-mba/definition"
 	"github.com/vela-ssoc/vela-tunnel"
+	"github.com/vela-ssoc/vela-tunnel/legacy/definition"
 	"github.com/xgfone/ship/v5"
 )
 
@@ -30,10 +30,10 @@ func main() {
 	ctx := context.Background()
 	// 测试环境自己手动输入参数
 	{
-		
+
 		hide := definition.MHide{
-			Semver:   "0.0.1-alpha",
-			Addrs: []string{"ssoc-broker.example.com:8443"},
+			Semver: "0.0.1-alpha",
+			Addrs:  []string{"ssoc-broker.example.com:8443"},
 		}
 	}
 

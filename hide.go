@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/vela-ssoc/vela-common-mba/ciphertext"
-	"github.com/vela-ssoc/vela-common-mba/definition"
+	"github.com/vela-ssoc/vela-tunnel/legacy/ciphertext"
+	"github.com/vela-ssoc/vela-tunnel/legacy/definition"
 )
 
 func ReadHide(filename ...string) (definition.MHide, error) {

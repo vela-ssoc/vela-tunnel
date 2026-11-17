@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vela-ssoc/vela-common-mba/definition"
-	"github.com/vela-ssoc/vela-common-mba/netutil"
-	"github.com/vela-ssoc/vela-common-mba/smux"
+	"github.com/vela-ssoc/vela-tunnel/legacy/definition"
+	"github.com/vela-ssoc/vela-tunnel/legacy/netutil"
+	"github.com/vela-ssoc/vela-tunnel/legacy/smux"
 )
 
 // borerTunnel 通道连接器

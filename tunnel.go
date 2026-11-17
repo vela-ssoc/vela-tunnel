@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/vela-ssoc/vela-common-mba/definition"
-	"github.com/vela-ssoc/vela-common-mba/netutil"
+	"github.com/vela-ssoc/vela-tunnel/legacy/definition"
+	"github.com/vela-ssoc/vela-tunnel/legacy/netutil"
 )
 
 // Tunneler agent 节点与 broker 的连接器

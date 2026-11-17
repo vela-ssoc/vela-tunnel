@@ -6,8 +6,6 @@ github.com/pion/transport/v5 v5.1.5 h1:73fa352Y9dq85kCd9rzyBV7wd/qhAiBIuTtwzWO3W
 github.com/pion/transport/v5 v5.1.5/go.mod h1:Qxw6fCEjFWQkRDZOhS4Vf+neJBcihauvA3uyEa1J1F0=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20251210091356-7c0c9896a277 h1:yoGmjdg62V+7ttvssABuXmXMyqwWdDTACQ8YZOXKRnQ=
-github.com/vela-ssoc/vela-common-mba v0.0.0-20251210091356-7c0c9896a277/go.mod h1:DMN/az9fN2p0mJ1CNouJjsEJWs69Ucqbtq34DOCaTlc=
 github.com/xtaci/smux v1.5.60 h1:LxugALMdZQXOlWFyn3pgs8KS88VwtNgYD6GF1b2Ja7A=
 github.com/xtaci/smux v1.5.60/go.mod h1:4a0pmNZcNJczCxNBibsxemErdgh0os4H4R1Eic2a0tA=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
